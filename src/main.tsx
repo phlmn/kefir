@@ -12,6 +12,8 @@ import {
   Selection,
 } from "victory";
 
+import { calculateTaps, frequencyResponse } from "./fir";
+
 const normDist = gaussian(0, 1 / (2 * Math.PI));
 
 const peakFilter =
@@ -26,7 +28,7 @@ const filterMap = {
 
 function filterFromDef(def: any) {
   const { type, ...opts } = def;
-  const createFilterFn = filterMap[type];
+  const createFilterFn = (filterMap as any)[type];
 
   if (createFilterFn) {
     return createFilterFn(opts);
@@ -35,15 +37,13 @@ function filterFromDef(def: any) {
 
 function freqencyResponse(filters: Array<(f: number) => number>) {
   const masterData: Array<{ x: number; y: number }> = [];
-  const currentData: Array<{ x: number; y: number }> = [];
 
   let i = 10;
-  while (i <= 22000) {
+  while (i < 24000) {
     masterData.push({ x: i, y: filters.reduce((acc, f) => acc + f(i), 0) });
-    currentData.push({ x: i, y: filters[0](i) });
-
     i += i / 40;
   }
+
   console.log(`${masterData.length} points`);
 
   return masterData;
@@ -62,86 +62,58 @@ function App() {
   const [selectedPoint, setSelectedPoint] = useState<number | undefined>();
   const [dragging, setDragging] = useState(false);
 
+  const [taps, setTaps] = useState<number[] | undefined>();
+  const [filterFrequencyResponse, setFilterFrequencyResponse] = useState<
+    Array<{ x: number; y: number }> | undefined
+  >();
+
   let selectedData;
   if (selectedPoint !== undefined) {
     selectedData = freqencyResponse([filters[selectedPoint]]);
   }
 
   return (
-    <VictoryChart
-      theme={VictoryTheme.material}
-      scale={{ x: "log", y: "linear" }}
-      domain={{ x: [10, 20000], y: [-12, 12] }}
-      width={900}
-      events={[
-        {
-          target: "parent",
-          eventHandlers: {
-            onMouseMove: (evt, targetProps) => {
-              const parentSVG =
-                targetProps.parentSVG || Selection.getParentSVG(evt);
-              const cursorSVGPosition = Selection.getSVGEventCoordinates(
-                evt,
-                parentSVG
-              );
-              let cursorValue: SVGCoordinateType | null =
-                Selection.getDataCoordinates(
-                  targetProps,
-                  targetProps.scale,
-                  cursorSVGPosition.x,
-                  cursorSVGPosition.y
-                );
-
-              if (dragging && selectedPoint != undefined) {
-                const newFilterDefs = [...filterDefs];
-                newFilterDefs[selectedPoint] = {
-                  ...filterDefs[selectedPoint],
-                  frequency: cursorValue.x,
-                  gain: cursorValue.y,
-                };
-                setFilterDefs(newFilterDefs);
-              }
-            },
-            onMouseUp: () => {
-              return [
-                {
-                  target: "data",
-                  mutation: () => {
-                    setDragging(false);
-                  },
-                },
-              ];
-            },
-          },
-        },
-      ]}
-    >
-      <VictoryAxis style={{ ticks: { size: 0 } }} />
-      <VictoryLine
-        style={{ data: { strokeWidth: 1.5, stroke: "#c43a31" } }}
-        data={masterData}
-        interpolation="catmullRom"
-      />
-      {selectedData && (
-        <VictoryArea
-          style={{ data: { fill: "#c43a31", opacity: 0.25 } }}
-          data={selectedData}
-          interpolation="catmullRom"
-        />
-      )}
-      <VictoryScatter
-        data={filterDefs.map((def) => ({ x: def.frequency, y: def.gain }))}
+    <div>
+      <VictoryChart
+        theme={VictoryTheme.material}
+        scale={{ x: "log", y: "linear" }}
+        domain={{ x: [10, 24000], y: [-12, 12] }}
+        width={900}
         events={[
           {
-            target: "data",
+            target: "parent",
             eventHandlers: {
-              onMouseDown: () => {
+              onMouseMove: (evt, targetProps) => {
+                const parentSVG =
+                  targetProps.parentSVG || Selection.getParentSVG(evt);
+                const cursorSVGPosition = Selection.getSVGEventCoordinates(
+                  evt,
+                  parentSVG
+                );
+                let cursorValue: SVGCoordinateType | null =
+                  Selection.getDataCoordinates(
+                    targetProps,
+                    targetProps.scale,
+                    cursorSVGPosition.x,
+                    cursorSVGPosition.y
+                  );
+
+                if (dragging && selectedPoint != undefined) {
+                  const newFilterDefs = [...filterDefs];
+                  newFilterDefs[selectedPoint] = {
+                    ...filterDefs[selectedPoint],
+                    frequency: cursorValue.x,
+                    gain: cursorValue.y,
+                  };
+                  setFilterDefs(newFilterDefs);
+                }
+              },
+              onMouseUp: () => {
                 return [
                   {
                     target: "data",
-                    mutation: (props) => {
-                      setSelectedPoint(props.index);
-                      setDragging(true);
+                    mutation: () => {
+                      setDragging(false);
                     },
                   },
                 ];
@@ -149,9 +121,83 @@ function App() {
             },
           },
         ]}
-      />
-    </VictoryChart>
+      >
+        <VictoryAxis style={{ ticks: { size: 0 } }} />
+        {filterFrequencyResponse && (
+          <VictoryLine
+            style={{ data: { strokeWidth: 1.5, stroke: "#aaaaaa" } }}
+            data={filterFrequencyResponse}
+            interpolation="catmullRom"
+          />
+        )}
+        <VictoryLine
+          style={{ data: { strokeWidth: 1.5, stroke: "#c43a31" } }}
+          data={masterData}
+          interpolation="catmullRom"
+        />
+        {selectedData && (
+          <VictoryArea
+            style={{ data: { fill: "#c43a31", opacity: 0.25 } }}
+            data={selectedData}
+            interpolation="catmullRom"
+          />
+        )}
+        <VictoryScatter
+          data={filterDefs.map((def) => ({ x: def.frequency, y: def.gain }))}
+          events={[
+            {
+              target: "data",
+              eventHandlers: {
+                onMouseDown: () => {
+                  return [
+                    {
+                      target: "data",
+                      mutation: (props) => {
+                        setSelectedPoint(props.index);
+                        setDragging(true);
+                      },
+                    },
+                  ];
+                },
+              },
+            },
+          ]}
+        />
+      </VictoryChart>
+
+      <button
+        onClick={async () => {
+          const taps = await calculateTaps(
+            4800 * 2,
+            [0, ...masterData.map((d) => d.x), 24000],
+            [0, ...masterData.map((d) => dbToAmplitude(d.y)), 0]
+          );
+          setTaps(taps);
+
+          const [freqs, gains] = await frequencyResponse(taps);
+          const f = new Array(...freqs).map((freq, i) => {
+            return { x: freq, y: amplitudeToDb(gains[i]) };
+          });
+
+          console.log(f);
+
+          setFilterFrequencyResponse(f);
+        }}
+      >
+        Calculate!
+      </button>
+
+      <textarea value={taps?.join("\n")}></textarea>
+    </div>
   );
+}
+
+function dbToAmplitude(db: number) {
+  return Math.pow(10, db / 20);
+}
+
+function amplitudeToDb(amp: number) {
+  return Math.log10(amp) * 20;
 }
 
 const root = ReactDOM.createRoot(
