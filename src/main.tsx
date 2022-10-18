@@ -12,9 +12,11 @@ import {
   Selection,
 } from "victory";
 
-import { calculateTaps, frequencyResponse } from "./fir";
+import { calculateTaps, frequencyResponse, getPyodide } from "./fir";
 
 const normDist = gaussian(0, 1 / (2 * Math.PI));
+
+getPyodide();
 
 const peakFilter =
   ({ frequency, gain, q }: { frequency: number; gain: number; q: number }) =>
@@ -144,6 +146,14 @@ function App() {
         )}
         <VictoryScatter
           data={filterDefs.map((def) => ({ x: def.frequency, y: def.gain }))}
+          size={(d) => (d.index === selectedPoint ? 5 : 3.5)}
+          style={{
+            data: {
+              opacity: 0.8,
+              cursor: "pointer",
+              fill: (d) => (d.index === selectedPoint ? "#c43a31" : "#555"),
+            },
+          }}
           events={[
             {
               target: "data",

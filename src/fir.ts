@@ -8,9 +8,15 @@ declare global {
 
 let _p: PyodideInterface | undefined;
 
-async function getPyodide() {
+let promise: Promise<PyodideInterface> | undefined;
+
+export async function getPyodide() {
   if (!_p) {
-    _p = await window.loadPyodide();
+    if (!promise) {
+      promise = window.loadPyodide();  
+    }
+
+    _p = await promise;
     await _p.loadPackage("scipy");
   }
 
