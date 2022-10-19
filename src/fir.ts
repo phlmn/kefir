@@ -13,7 +13,7 @@ let promise: Promise<PyodideInterface> | undefined;
 export async function getPyodide() {
   if (!_p) {
     if (!promise) {
-      promise = window.loadPyodide();  
+      promise = window.loadPyodide();
     }
 
     _p = await promise;
@@ -30,34 +30,36 @@ export async function calculateTaps(
 ) {
   const p = await getPyodide();
 
-  let firwin2 = p.runPython(`
-        import scipy.signal
+  let fn = p.runPython(`
+    import scipy.signal
 
-        def firwin2(numtaps, freqs, gains):
-            return scipy.signal.firwin2(numtaps, freqs.to_py(), gains.to_py(), fs=48000)
+    def fn(numtaps, freqs, gains):
+      return scipy.signal.firwin2(numtaps, freqs.to_py(), gains.to_py(), fs=48000)
 
-        firwin2
-    `);
+    fn
+  `);
 
-  return firwin2(numtaps, freqs, gains).toJs();
+  return fn(numtaps, freqs, gains).toJs();
 }
 
 export async function frequencyResponse(
-  taps: number[]
+  taps: number[],
+  frequencies: number[]
 ): Promise<[number[], number[]]> {
   const p = await getPyodide();
 
-  let freqz = p.runPython(`
-        import scipy.signal
-        import numpy
+  let fn = p.runPython(`
+    import scipy.signal
+    import scipy.fft
+    import numpy
 
-        def freqz(taps):
-          w, h = scipy.signal.freqz(taps.to_py(), [1], worN=4096, fs=48000)
-          gain = list(map(lambda x: numpy.absolute(x), h))
-          return w, gain
+    def fn(taps, frequencies):
+      w, h = scipy.signal.freqz(taps.to_py(), [1], worN=frequencies.to_py(), fs=48000)
+      gain = numpy.absolute(h)
+      return w, gain
 
-        freqz
-    `);
+    fn
+  `);
 
-  return freqz(taps).toJs();
+  return fn(taps, frequencies).toJs();
 }

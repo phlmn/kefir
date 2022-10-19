@@ -77,10 +77,11 @@ function App() {
   return (
     <div>
       <VictoryChart
+        style={{ parent: { maxWidth: "1200px" } }}
         theme={VictoryTheme.material}
         scale={{ x: "log", y: "linear" }}
-        domain={{ x: [10, 24000], y: [-12, 12] }}
-        width={900}
+        domain={{ x: [10, 24000], y: [-20, 20] }}
+        width={1200}
         events={[
           {
             target: "parent",
@@ -105,7 +106,7 @@ function App() {
                   newFilterDefs[selectedPoint] = {
                     ...filterDefs[selectedPoint],
                     frequency: cursorValue.x,
-                    gain: cursorValue.y,
+                    gain: Math.max(-20, Math.min(cursorValue.y, 20)),
                   };
                   setFilterDefs(newFilterDefs);
                 }
@@ -124,16 +125,33 @@ function App() {
           },
         ]}
       >
-        <VictoryAxis style={{ ticks: { size: 0 } }} />
+        <VictoryAxis
+          label="Gain (db)"
+          style={{
+            axisLabel: { fontSize: 12, padding: 25 },
+            tickLabels: { fontSize: 12, padding: 5 },
+            ticks: { stroke: 0 },
+            axis: { stroke: 0 },
+          }}
+          dependentAxis
+          tickValues={[-20, -10, 0, 10, 20]}
+        />
+        <VictoryAxis
+          style={{
+            tickLabels: { fontSize: 12, padding: 10 },
+            ticks: { size: 0, strokeWidth: 2, strokeLinecap: "square" },
+          }}
+          crossAxis
+        />
         {filterFrequencyResponse && (
           <VictoryLine
-            style={{ data: { strokeWidth: 1.5, stroke: "#aaaaaa" } }}
+            style={{ data: { strokeWidth: 2, stroke: "#aaaaaa" } }}
             data={filterFrequencyResponse}
             interpolation="catmullRom"
           />
         )}
         <VictoryLine
-          style={{ data: { strokeWidth: 1.5, stroke: "#c43a31" } }}
+          style={{ data: { strokeWidth: 2, stroke: "#c43a31" } }}
           data={masterData}
           interpolation="catmullRom"
         />
@@ -146,10 +164,12 @@ function App() {
         )}
         <VictoryScatter
           data={filterDefs.map((def) => ({ x: def.frequency, y: def.gain }))}
-          size={(d) => (d.index === selectedPoint ? 5 : 3.5)}
+          size={(d) => (d.index === selectedPoint ? 6 : 5)}
           style={{
             data: {
-              opacity: 0.8,
+              strokeWidth: 3,
+              strokeOpacity: 1.0,
+              stroke: 'white',
               cursor: "pointer",
               fill: (d) => (d.index === selectedPoint ? "#c43a31" : "#555"),
             },
@@ -178,18 +198,17 @@ function App() {
       <button
         onClick={async () => {
           const taps = await calculateTaps(
-            4800 * 2,
+            4800,
             [0, ...masterData.map((d) => d.x), 24000],
-            [0, ...masterData.map((d) => dbToAmplitude(d.y)), 0]
+            [0, ...masterData.map((d) => dbToAmplitude(d.y - 6)), 0]
           );
           setTaps(taps);
 
-          const [freqs, gains] = await frequencyResponse(taps);
-          const f = new Array(...freqs).map((freq, i) => {
+          const frequencies = masterData.map((data) => data.x);
+          const [w, gains] = await frequencyResponse(taps, frequencies);
+          const f = new Array(...w).map((freq, i) => {
             return { x: freq, y: amplitudeToDb(gains[i]) };
           });
-
-          console.log(f);
 
           setFilterFrequencyResponse(f);
         }}
