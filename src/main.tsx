@@ -1,5 +1,5 @@
 import gaussian from "gaussian";
-import { useState } from "react";
+import React, {MouseEvent, SyntheticEvent, useState} from "react";
 import ReactDOM from "react-dom/client";
 import {
   SVGCoordinateType,
@@ -111,6 +111,33 @@ function App() {
                   setFilterDefs(newFilterDefs);
                 }
               },
+              onClick: (event: SyntheticEvent, targetProps) => {
+                const e = event as React.MouseEvent;
+                if (e.detail != 2) return;
+                const parentSVG =
+                    targetProps.parentSVG || Selection.getParentSVG(e);
+                const cursorSVGPosition = Selection.getSVGEventCoordinates(
+                    e,
+                    parentSVG
+                );
+                let cursorValue: SVGCoordinateType | null =
+                    Selection.getDataCoordinates(
+                        targetProps,
+                        targetProps.scale,
+                        cursorSVGPosition.x,
+                        cursorSVGPosition.y
+                    );
+
+                const newFilterDefs = [...filterDefs];
+                newFilterDefs.push({
+                  type: "peak",
+                  frequency: cursorValue.x,
+                  gain: Math.max(-20, Math.min(cursorValue.y, 20)),
+                  q: 3,
+                });
+                setFilterDefs(newFilterDefs);
+                setSelectedPoint(newFilterDefs.length - 1)
+              },
               onMouseUp: () => {
                 return [
                   {
@@ -121,6 +148,9 @@ function App() {
                   },
                 ];
               },
+              onKeyDown(e) {
+                console.log(e)
+              }
             },
           },
         ]}
@@ -143,18 +173,18 @@ function App() {
           }}
           crossAxis
         />
-        {filterFrequencyResponse && (
-          <VictoryLine
-            style={{ data: { strokeWidth: 2, stroke: "#aaaaaa" } }}
-            data={filterFrequencyResponse}
-            interpolation="catmullRom"
-          />
-        )}
         <VictoryLine
           style={{ data: { strokeWidth: 2, stroke: "#c43a31" } }}
           data={masterData}
           interpolation="catmullRom"
         />
+        {filterFrequencyResponse && (
+            <VictoryLine
+                style={{ data: { strokeWidth: 2, stroke: "#aaaaaa", strokeDasharray: "2,2" } }}
+                data={filterFrequencyResponse}
+                interpolation="catmullRom"
+            />
+        )}
         {selectedData && (
           <VictoryArea
             style={{ data: { fill: "#c43a31", opacity: 0.25 } }}
@@ -178,6 +208,23 @@ function App() {
             {
               target: "data",
               eventHandlers: {
+                onWheel: (event, targetProps) => {
+                  const e = event as React.WheelEvent;
+                  return [
+                    {
+                      target: "data",
+                      mutation: (props) => {
+                        const newFilterDefs = [...filterDefs];
+                        newFilterDefs[props.index] = {
+                          ...filterDefs[props.index],
+                          q: Math.max(0.1, Math.min(24, filterDefs[props.index].q + e.deltaY * filterDefs[props.index].q / 100))
+                        };
+                        setFilterDefs(newFilterDefs);
+                        setSelectedPoint(props.index);
+                      },
+                    },
+                  ];
+                },
                 onMouseDown: () => {
                   return [
                     {
@@ -198,9 +245,9 @@ function App() {
       <button
         onClick={async () => {
           const taps = await calculateTaps(
-            4800,
+            4800 * 8,
             [0, ...masterData.map((d) => d.x), 24000],
-            [0, ...masterData.map((d) => dbToAmplitude(d.y - 6)), 0]
+            [dbToAmplitude(masterData[0].y), ...masterData.map((d) => dbToAmplitude(d.y)), 0]
           );
           setTaps(taps);
 
