@@ -1,4 +1,4 @@
-import { PyodideInterface } from "pyodide";
+import { PyodideInterface } from 'pyodide';
 
 declare global {
   interface Window {
@@ -17,7 +17,7 @@ export async function getPyodide() {
     }
 
     _p = await promise;
-    await _p.loadPackage("scipy");
+    await _p.loadPackage('scipy');
   }
 
   return _p;
@@ -26,7 +26,7 @@ export async function getPyodide() {
 export async function calculateTaps(
   numtaps: number,
   freqs: number[],
-  gains: number[]
+  gains: number[],
 ) {
   const p = await getPyodide();
 
@@ -44,7 +44,7 @@ export async function calculateTaps(
 
 export async function frequencyResponse(
   taps: number[],
-  frequencies: number[]
+  frequencies: number[],
 ): Promise<[number[], number[]]> {
   const p = await getPyodide();
 
