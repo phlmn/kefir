@@ -1,9 +1,9 @@
-import { PyodideInterface } from "pyodide";
+import {PyodideInterface} from "pyodide";
 
 declare global {
-  interface Window {
-    loadPyodide: () => Promise<PyodideInterface>;
-  }
+    interface Window {
+        loadPyodide: () => Promise<PyodideInterface>;
+    }
 }
 
 let _p: PyodideInterface | undefined;
@@ -11,55 +11,54 @@ let _p: PyodideInterface | undefined;
 let promise: Promise<PyodideInterface> | undefined;
 
 export async function getPyodide() {
-  if (!_p) {
-    if (!promise) {
-      promise = window.loadPyodide();
+    if (!_p) {
+        if (!promise) {
+            promise = window.loadPyodide();
+        }
+
+        _p = await promise;
+        await _p.loadPackage("scipy");
+        console.info("importing python dependencies");
+        await _p.runPythonAsync(`
+            import scipy.signal
+            import scipy.fft
+            import numpy
+        `);
+        console.info("done importing python dependencies");
     }
 
-    _p = await promise;
-    await _p.loadPackage("scipy");
-  }
-
-  return _p;
+    return _p;
 }
 
-export async function calculateTaps(
-  numtaps: number,
-  freqs: number[],
-  gains: number[]
-) {
-  const p = await getPyodide();
+function makePythonFunction(code: string) {
+    return async (...args: any[]) => {
+        const p = await getPyodide();
 
-  let fn = p.runPython(`
-    import scipy.signal
-
-    def fn(numtaps, freqs, gains):
-      return scipy.signal.firwin2(numtaps, freqs.to_py(), gains.to_py(), fs=48000)
-
-    fn
-  `);
-
-  return fn(numtaps, freqs, gains).toJs();
+        let fn = p.runPython(
+            `${code}\n` +
+            `fn\n`
+        );
+        return fn(...args).toJs();
+    }
 }
 
-export async function frequencyResponse(
-  taps: number[],
-  frequencies: number[]
-): Promise<[number[], number[]]> {
-  const p = await getPyodide();
+export const calculateTaps: ((numtaps: number, freqs: number[], gains: number[]) => Promise<number[]>) = makePythonFunction(`
+def fn(numtaps, freqs, gains):
+    return scipy.signal.firwin2(numtaps, freqs.to_py(), gains.to_py(), fs=48000)
+`)
 
-  let fn = p.runPython(`
-    import scipy.signal
-    import scipy.fft
-    import numpy
+export const minimumPhase: ((taps: number[]) => Promise<number[]>) = makePythonFunction(`
+def fn(taps):
+    return scipy.signal.minimum_phase(taps.to_py())
+`);
 
-    def fn(taps, frequencies):
-      w, h = scipy.signal.freqz(taps.to_py(), [1], worN=frequencies.to_py(), fs=48000)
-      gain = numpy.absolute(h)
-      return w, gain
-
-    fn
-  `);
-
-  return fn(taps, frequencies).toJs();
-}
+export const frequencyResponse: ((
+    taps: number[],
+    frequencies: number[]
+) => Promise<[number[], number[], number[]]>) = makePythonFunction(`
+def fn(taps, frequencies):
+    w, h = scipy.signal.freqz(taps.to_py(), [1], worN=frequencies.to_py(), fs=48000)
+    gain = numpy.absolute(h)
+    phase = numpy.angle(h, deg=True)
+    return w, gain, phase
+`)
