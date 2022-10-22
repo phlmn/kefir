@@ -12,7 +12,12 @@ import {
   Selection,
 } from 'victory';
 
-import { calculateTaps, frequencyResponse, getPyodide } from './fir';
+import {
+  calculateTaps,
+  frequencyResponse,
+  getPyodide,
+  minimumPhase,
+} from './fir';
 
 const normDist = gaussian(0, 1 / (2 * Math.PI));
 
@@ -66,11 +71,24 @@ function App() {
   const [filterFrequencyResponse, setFilterFrequencyResponse] = useState<
     Array<{ x: number; y: number }> | undefined
   >();
+  const [filterPhaseResponse, setFilterPhaseResponse] = useState<
+    Array<{ x: number; y: number }> | undefined
+  >();
 
   let selectedData;
   if (selectedPoint !== undefined) {
     selectedData = freqencyResponse([filters[selectedPoint]]);
   }
+
+  const taps_total = taps?.map((x) => x * x)?.reduce((x, acc) => x + acc);
+  const latency_estimation = taps
+    ?.map((x, i) => ((x * x) / (taps_total || 0)) * i * (1000 / 48000))
+    .reduce((x, acc) => x + acc);
+
+  const dbToAxis = (x: Array<{ x: number; y: number }>) =>
+    x.map((x) => ({ ...x, y: x.y / 20 }));
+  const degToAxis = (x: Array<{ x: number; y: number }>) =>
+    x.map((x) => ({ ...x, y: x.y / 180 }));
 
   const containerRef = useRef<HTMLDivElement>(null);
   return (
@@ -103,7 +121,6 @@ function App() {
           style={{ parent: { maxWidth: '1200px' } }}
           theme={VictoryTheme.material}
           scale={{ x: 'log', y: 'linear' }}
-          domain={{ x: [10, 24000], y: [-20, 20] }}
           width={1200}
           events={[
             {
@@ -129,7 +146,7 @@ function App() {
                     newFilterDefs[selectedPoint] = {
                       ...filterDefs[selectedPoint],
                       frequency: cursorValue.x,
-                      gain: Math.max(-20, Math.min(cursorValue.y, 20)),
+                      gain: Math.max(-20, Math.min(cursorValue.y * 20, 20)),
                     };
                     setFilterDefs(newFilterDefs);
                   }
@@ -155,7 +172,7 @@ function App() {
                   newFilterDefs.push({
                     type: 'peak',
                     frequency: cursorValue.x,
-                    gain: Math.max(-20, Math.min(cursorValue.y, 20)),
+                    gain: Math.max(-20, Math.min(cursorValue.y * 20, 20)),
                     q: 3,
                   });
                   setFilterDefs(newFilterDefs);
@@ -175,6 +192,7 @@ function App() {
               },
             },
           ]}
+          domain={{ x: [20, 20000], y: [-1, 1] }}
         >
           <VictoryAxis
             label="Gain (db)"
@@ -185,7 +203,21 @@ function App() {
               axis: { stroke: 0 },
             }}
             dependentAxis
-            tickValues={[-20, -10, 0, 10, 20]}
+            tickValues={[-1, -0.5, 0, 0.5, 1]}
+            tickFormat={[-20, -10, 0, 10, 20]}
+          />
+          <VictoryAxis
+            label="Phase (deg)"
+            orientation={'right'}
+            style={{
+              axisLabel: { fontSize: 12, padding: 25 },
+              tickLabels: { fontSize: 12, padding: 5 },
+              ticks: { stroke: 0 },
+              axis: { stroke: 0 },
+            }}
+            dependentAxis
+            tickValues={[-1, -0.5, 0, 0.5, 1]}
+            tickFormat={[-180, -90, 0, 90, 180]}
           />
           <VictoryAxis
             style={{
@@ -196,7 +228,7 @@ function App() {
           />
           <VictoryLine
             style={{ data: { strokeWidth: 2, stroke: '#c43a31' } }}
-            data={masterData}
+            data={dbToAxis(masterData)}
             interpolation="catmullRom"
           />
           {filterFrequencyResponse && (
@@ -208,22 +240,37 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={filterFrequencyResponse}
+              data={dbToAxis(filterFrequencyResponse)}
+              interpolation="catmullRom"
+            />
+          )}
+          {filterPhaseResponse && (
+            <VictoryLine
+              style={{
+                data: {
+                  strokeWidth: 2,
+                  stroke: '#59f',
+                  strokeDasharray: '2,2',
+                },
+              }}
+              data={degToAxis(filterPhaseResponse)}
               interpolation="catmullRom"
             />
           )}
           {selectedData && (
             <VictoryArea
               style={{ data: { fill: '#c43a31', opacity: 0.25 } }}
-              data={selectedData}
+              data={dbToAxis(selectedData)}
               interpolation="catmullRom"
             />
           )}
           <VictoryScatter
-            data={filterDefs.map((def) => ({
-              x: def.frequency,
-              y: def.gain,
-            }))}
+            data={dbToAxis(
+              filterDefs.map((def) => ({
+                x: def.frequency,
+                y: def.gain,
+              })),
+            )}
             size={(d) => (d.index === selectedPoint ? 6 : 5)}
             style={{
               data: {
@@ -282,8 +329,8 @@ function App() {
 
       <button
         onClick={async () => {
-          const taps = await calculateTaps(
-            4800 * 8,
+          let taps = await calculateTaps(
+            4800,
             [0, ...masterData.map((d) => d.x), 24000],
             [
               dbToAmplitude(masterData[0].y),
@@ -294,16 +341,48 @@ function App() {
           setTaps(taps);
 
           const frequencies = masterData.map((data) => data.x);
-          const [w, gains] = await frequencyResponse(taps, frequencies);
+          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
           const f = new Array(...w).map((freq, i) => {
             return { x: freq, y: amplitudeToDb(gains[i]) };
           });
 
           setFilterFrequencyResponse(f);
+          setFilterPhaseResponse(undefined);
         }}
       >
-        Calculate!
+        Calculate Linear Phase!
       </button>
+      <button
+        onClick={async () => {
+          let taps = await calculateTaps(
+            4800,
+            [0, ...masterData.map((d) => d.x), 24000],
+            [
+              dbToAmplitude(masterData[0].y),
+              ...masterData.map((d) => dbToAmplitude(d.y) * dbToAmplitude(d.y)),
+              0,
+            ],
+          );
+          taps = await minimumPhase(taps);
+          setTaps(taps);
+
+          const frequencies = masterData.map((data) => data.x);
+          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
+          const f = new Array(...w).map((freq, i) => {
+            return { x: freq, y: amplitudeToDb(gains[i]) };
+          });
+          const p = new Array(...w).map((freq, i) => {
+            return { x: freq, y: phase[i] };
+          });
+
+          setFilterFrequencyResponse(f);
+          setFilterPhaseResponse(p);
+        }}
+      >
+        Calculate Minimum Phase!
+      </button>
+
+      <div>Estimated Latency: {latency_estimation?.toFixed(2)}ms</div>
 
       <textarea value={taps?.join('\n')}></textarea>
     </div>
