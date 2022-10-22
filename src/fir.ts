@@ -20,10 +20,10 @@ export async function getPyodide() {
     await _p.loadPackage('scipy');
     console.info('importing python dependencies');
     await _p.runPythonAsync(`
-      import scipy.signal
-      import scipy.fft
-      import numpy
-    `);
+          import scipy.signal
+          import scipy.fft
+          import numpy as np
+        `);
     console.info('done importing python dependencies');
   }
 
@@ -48,10 +48,22 @@ def fn(numtaps, freqs, gains):
   return scipy.signal.firwin2(numtaps, freqs.to_py(), gains.to_py(), fs=48000)
 `);
 
+export const ifft: (
+  gain: number[],
+  phase: number[],
+) => Promise<[number[], number[]]> = makePythonFunction(`
+def fn(gain, phase):
+    gain = np.array(gain.to_py())
+    phase = np.array(phase.to_py())
+    complex = gain * np.exp(1j*phase)
+    transformed = scipy.fft.ifft(complex)
+    return np.real(transformed), np.imag(transformed)
+`);
+
 export const minimumPhase: (taps: number[]) => Promise<number[]> =
   makePythonFunction(`
 def fn(taps):
-  return scipy.signal.minimum_phase(taps.to_py())
+    return scipy.signal.minimum_phase(taps.to_py())
 `);
 
 export const frequencyResponse: (
@@ -60,7 +72,7 @@ export const frequencyResponse: (
 ) => Promise<[number[], number[], number[]]> = makePythonFunction(`
 def fn(taps, frequencies):
   w, h = scipy.signal.freqz(taps.to_py(), [1], worN=frequencies.to_py(), fs=48000)
-  gain = numpy.absolute(h)
-  phase = numpy.angle(h, deg=True)
+  gain = np.absolute(h)
+  phase = np.angle(h, deg=True)
   return w, gain, phase
 `);

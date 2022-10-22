@@ -16,6 +16,7 @@ import {
   calculateTaps,
   frequencyResponse,
   getPyodide,
+  ifft,
   minimumPhase,
 } from './fir';
 
@@ -42,16 +43,27 @@ function filterFromDef(def: any) {
   }
 }
 
-function freqencyResponse(filters: Array<(f: number) => number>) {
-  const masterData: Array<{ x: number; y: number }> = [];
-
+function samplingFrequencies(): number[] {
+  const frequencies = [];
   let i = 10;
   while (i < 24000) {
-    masterData.push({ x: i, y: filters.reduce((acc, f) => acc + f(i), 0) });
+    frequencies.push(i);
     i += i / 40;
   }
+  return frequencies;
+}
 
-  return masterData;
+function freqencyResponse(
+  filters: Array<(f: number) => number>,
+  frequencies: number[],
+) {
+  return frequencies.map((freq) =>
+    filters.reduce((acc, fn) => acc + fn(freq), 0),
+  );
+}
+
+function zipToXY(x: number[], y: number[]): { x: number; y: number }[] {
+  return x.map((x, i) => ({ x, y: y[i] }));
 }
 
 function App() {
@@ -62,7 +74,9 @@ function App() {
     { type: 'peak', frequency: 1000, gain: -1, q: 10 },
   ]);
   const filters = filterDefs.map(filterFromDef);
-  const masterData = freqencyResponse(filters);
+  const frequencies = samplingFrequencies();
+  const masterGains = freqencyResponse(filters, frequencies);
+  const masterData = zipToXY(frequencies, masterGains);
 
   const [selectedPoint, setSelectedPoint] = useState<number | undefined>();
   const [dragging, setDragging] = useState(false);
@@ -77,7 +91,10 @@ function App() {
 
   let selectedData;
   if (selectedPoint !== undefined) {
-    selectedData = freqencyResponse([filters[selectedPoint]]);
+    selectedData = zipToXY(
+      frequencies,
+      freqencyResponse([filters[selectedPoint]], frequencies),
+    );
   }
 
   const taps_total = taps?.map((x) => x * x)?.reduce((x, acc) => x + acc);
@@ -323,6 +340,137 @@ function App() {
                 },
               },
             ]}
+            domain={{ x: [20, 20000], y: [-1, 1] }}
+          />
+          <VictoryAxis
+            label="Gain (db)"
+            style={{
+              axisLabel: { fontSize: 12, padding: 25 },
+              tickLabels: { fontSize: 12, padding: 5 },
+              ticks: { stroke: 0 },
+              axis: { stroke: 0 },
+            }}
+            dependentAxis
+            tickValues={[-1, -0.5, 0, 0.5, 1]}
+            tickFormat={[-20, -10, 0, 10, 20]}
+          />
+          <VictoryAxis
+            label="Phase (deg)"
+            orientation={'right'}
+            style={{
+              axisLabel: { fontSize: 12, padding: 25 },
+              tickLabels: { fontSize: 12, padding: 5 },
+              ticks: { stroke: 0 },
+              axis: { stroke: 0 },
+            }}
+            dependentAxis
+            tickValues={[-1, -0.5, 0, 0.5, 1]}
+            tickFormat={[-180, -90, 0, 90, 180]}
+          />
+          <VictoryAxis
+            style={{
+              tickLabels: { fontSize: 12, padding: 10 },
+              ticks: { size: 0, strokeWidth: 2, strokeLinecap: 'square' },
+            }}
+            crossAxis
+          />
+          <VictoryLine
+            style={{ data: { strokeWidth: 2, stroke: '#c43a31' } }}
+            data={dbToAxis(masterData)}
+            interpolation="catmullRom"
+          />
+          {filterFrequencyResponse && (
+            <VictoryLine
+              style={{
+                data: {
+                  strokeWidth: 2,
+                  stroke: '#fa8690',
+                  strokeDasharray: '2,2',
+                },
+              }}
+              data={dbToAxis(filterFrequencyResponse)}
+              interpolation="catmullRom"
+            />
+          )}
+          {filterPhaseResponse && (
+            <VictoryLine
+              style={{
+                data: {
+                  strokeWidth: 2,
+                  stroke: '#59f',
+                  strokeDasharray: '2,2',
+                },
+              }}
+              data={degToAxis(filterPhaseResponse)}
+              interpolation="catmullRom"
+            />
+          )}
+          {selectedData && (
+            <VictoryArea
+              style={{ data: { fill: '#c43a31', opacity: 0.25 } }}
+              data={dbToAxis(selectedData)}
+              interpolation="catmullRom"
+            />
+          )}
+          <VictoryScatter
+            data={dbToAxis(
+              filterDefs.map((def) => ({
+                x: def.frequency,
+                y: def.gain,
+              })),
+            )}
+            size={(d) => (d.index === selectedPoint ? 6 : 5)}
+            style={{
+              data: {
+                strokeWidth: 3,
+                strokeOpacity: 1.0,
+                stroke: 'white',
+                cursor: 'pointer',
+                fill: (d) => (d.index === selectedPoint ? '#c43a31' : '#555'),
+              },
+            }}
+            events={[
+              {
+                target: 'data',
+                eventHandlers: {
+                  onWheel: (event, targetProps) => {
+                    const e = event as React.WheelEvent;
+                    return [
+                      {
+                        target: 'data',
+                        mutation: (props) => {
+                          const newFilterDefs = [...filterDefs];
+                          newFilterDefs[props.index] = {
+                            ...filterDefs[props.index],
+                            q: Math.max(
+                              0.1,
+                              Math.min(
+                                24,
+                                filterDefs[props.index].q +
+                                  (e.deltaY * filterDefs[props.index].q) / 100,
+                              ),
+                            ),
+                          };
+                          setFilterDefs(newFilterDefs);
+                          setSelectedPoint(props.index);
+                        },
+                      },
+                    ];
+                  },
+                  onMouseDown: () => {
+                    return [
+                      {
+                        target: 'data',
+                        mutation: (props) => {
+                          setSelectedPoint(props.index);
+                          setDragging(true);
+                        },
+                      },
+                    ];
+                  },
+                },
+              },
+            ]}
           />
         </VictoryChart>
       </div>
@@ -340,14 +488,16 @@ function App() {
           );
           setTaps(taps);
 
-          const frequencies = masterData.map((data) => data.x);
           const [w, gains, phase] = await frequencyResponse(taps, frequencies);
           const f = new Array(...w).map((freq, i) => {
             return { x: freq, y: amplitudeToDb(gains[i]) };
           });
+          const p = new Array(...w).map((freq, i) => {
+            return { x: freq, y: phase[i] };
+          });
 
           setFilterFrequencyResponse(f);
-          setFilterPhaseResponse(undefined);
+          setFilterPhaseResponse(p);
         }}
       >
         Calculate Linear Phase!
@@ -366,7 +516,6 @@ function App() {
           taps = await minimumPhase(taps);
           setTaps(taps);
 
-          const frequencies = masterData.map((data) => data.x);
           const [w, gains, phase] = await frequencyResponse(taps, frequencies);
           const f = new Array(...w).map((freq, i) => {
             return { x: freq, y: amplitudeToDb(gains[i]) };
@@ -381,10 +530,63 @@ function App() {
       >
         Calculate Minimum Phase!
       </button>
+      <button
+        onClick={async () => {
+          const N = 4800;
+          const freqs = Array(N / 2)
+            .fill(0)
+            .map((_, i) => (i / N) * 24_000);
+          const gainInput = [
+            ...freqencyResponse(filters, freqs),
+            ...freqencyResponse(filters, freqs).reverse(),
+          ];
+          const phaseInput = Array(N).fill(0);
+          const [real, imag] = await ifft(gainInput, phaseInput);
+          console.log(
+            'real sum',
+            real.map((x) => Math.abs(x)).reduce((x, a) => a + x),
+          );
+          console.log(
+            'imag sum',
+            imag.map((x) => Math.abs(x)).reduce((x, a) => a + x),
+          );
 
-      <div>Estimated Latency: {latency_estimation?.toFixed(2)}ms</div>
+          const taps = real.slice(0, N / 2);
+          setTaps(taps);
+          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
+          const f = new Array(...w).map((freq, i) => {
+            return { x: freq, y: amplitudeToDb(gains[i]) };
+          });
+          const p = new Array(...w).map((freq, i) => {
+            return { x: freq, y: phase[i] };
+          });
 
-      <textarea value={taps?.join('\n')}></textarea>
+          setFilterFrequencyResponse(f);
+          setFilterPhaseResponse(p);
+        }}
+      >
+        Calculate Linear Phase DIY!
+      </button>
+
+      {taps && (
+        <div>
+          <div>Estimated Latency: {latency_estimation?.toFixed(2)}ms</div>
+          <textarea value={taps.join('\n')}></textarea>
+          <VictoryChart
+            theme={VictoryTheme.material}
+            style={{ parent: { maxWidth: '1200px' } }}
+            width={1200}
+            height={500}
+          >
+            <VictoryLine
+              style={{
+                data: { stroke: '#c43a31', strokeWidth: 1 },
+              }}
+              data={[...taps].map((y, i) => ({ x: i / 48, y }))}
+            />
+          </VictoryChart>
+        </div>
+      )}
     </div>
   );
 }
