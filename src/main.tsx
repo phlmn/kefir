@@ -23,6 +23,50 @@ import {
 
 getPyodide();
 
+
+const ws = new WebSocket('ws://localhost:7777');
+
+function sendConfig(taps: number[]) {
+  const cfg = `
+---
+devices:
+  samplerate: 44100
+  capture_samplerate: 48000
+  chunksize: 64
+  resampler_type: BalancedAsync
+  capture:
+    type: File
+    channels: 2
+    filename: ./fragments_of_time.raw
+    format: S32LE
+  playback:
+    type: CoreAudio
+    channels: 2
+    device: "default"
+    format: S16LE
+
+filters:
+  example_fir_a:
+    type: Conv
+    parameters:
+      values: ${JSON.stringify(taps)}
+      type: Values  
+
+pipeline:
+  - type: Filter
+    channel: 0
+    names:
+      - example_fir_a
+  - type: Filter
+    channel: 1
+    names:
+      - example_fir_a
+
+  `;
+  console.log(cfg);
+  ws.send(JSON.stringify({ SetConfig: cfg }));
+}
+
 const peakFilter = ({
   frequency,
   gain,
@@ -504,6 +548,7 @@ function App() {
 
           setFilterFrequencyResponse(f);
           setFilterPhaseResponse(p);
+          // sendConfig([...taps]);
         }}
       >
         Calculate Linear Phase!
@@ -532,6 +577,7 @@ function App() {
 
           setFilterFrequencyResponse(f);
           setFilterPhaseResponse(p);
+          // sendConfig([...taps]);
         }}
       >
         Calculate Minimum Phase!
@@ -557,7 +603,7 @@ function App() {
             imag.map((x) => Math.abs(x)).reduce((x, a) => a + x),
           );
 
-          const taps = real.slice(0, N / 2);
+          const taps = real;
           setTaps(taps);
           const [w, gains, phase] = await frequencyResponse(taps, frequencies);
           const f = new Array(...w).map((freq, i) => {
@@ -569,6 +615,7 @@ function App() {
 
           setFilterFrequencyResponse(f);
           setFilterPhaseResponse(p);
+          // sendConfig([...taps]);
         }}
       >
         Calculate Linear Phase DIY!
