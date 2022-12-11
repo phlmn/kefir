@@ -7,7 +7,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "gaussian": "1.2.0",
+    "@thi.ng/dsp": "^4.2.24",
     "prettier": "^2.7.1",
     "pyodide": "0.21.3",
     "react": "18.2.0",
@@ -15,7 +15,6 @@
     "victory": "36.6.8"
   },
   "devDependencies": {
-    "@types/gaussian": "1.2.0",
     "@types/react-dom": "18.0.6",
     "@vitejs/plugin-react": "2.1.0",
     "vite": "3.1.8"

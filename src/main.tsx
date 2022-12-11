@@ -1,4 +1,3 @@
-import gaussian from 'gaussian';
 import React, { SyntheticEvent, useRef, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
@@ -11,6 +10,8 @@ import {
   VictoryTheme,
   Selection,
 } from 'victory';
+import { biquadPeak } from '@thi.ng/dsp/biquad';
+import { filterResponse } from '@thi.ng/dsp/filter-response';
 
 import {
   calculateTaps,
@@ -20,15 +21,20 @@ import {
   minimumPhase,
 } from './fir';
 
-const normDist = gaussian(0, 1 / (2 * Math.PI));
-
 getPyodide();
 
-const peakFilter =
-  ({ frequency, gain, q }: { frequency: number; gain: number; q: number }) =>
-  (f: number) => {
-    return normDist.pdf((f - frequency) / (frequency / q)) * gain;
-  };
+const peakFilter = ({
+  frequency,
+  gain,
+  q,
+}: {
+  frequency: number;
+  gain: number;
+  q: number;
+}) => {
+  const coeffs = biquadPeak(frequency / 48000, q, gain).filterCoeffs();
+  return (f: number) => filterResponse(coeffs, f / 48000).mag;
+};
 
 const filterMap = {
   peak: peakFilter,
