@@ -1,4 +1,5 @@
 {
+  "name": "kefir",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -8,6 +9,7 @@
   },
   "dependencies": {
     "@thi.ng/dsp": "^4.2.24",
+    "immer": "^9.0.16",
     "milligram": "^1.4.1",
     "prettier": "^2.7.1",
     "pyodide": "0.21.3",

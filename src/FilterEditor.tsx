@@ -11,6 +11,7 @@ import {
 } from 'victory';
 import { biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
+import produce from 'immer';
 
 export function dbToAmplitude(db: number) {
   return Math.pow(10, db / 20);
@@ -33,9 +34,61 @@ const peakFilter = ({
   return (f: number) => filterResponse(coeffs, f / 48000).mag;
 };
 
+const highpassFilter = ({
+  frequency,
+  gain,
+  q,
+}: {
+  frequency: number;
+  gain: number;
+  q: number;
+}) => {
+  return (f: number) => {
+    if (gain >= 0) {
+      return 0.0;
+    }
+
+    let offset = frequency / f;
+    let value = (Math.log2(offset) * gain) - 6;
+
+    if (value < 0) {
+      return Math.min(200, Math.max(-200, value));
+    } else {
+      return 0.0;
+    }
+  };
+};
+
+const lowpassFilter = ({
+  frequency,
+  gain,
+  q,
+}: {
+  frequency: number;
+  gain: number;
+  q: number;
+}) => {
+  return (f: number) => {
+    if (gain >= 0) {
+      return 0.0;
+    }
+
+    let offset = f / frequency;
+    let value = (Math.log2(offset) * gain) - 6;
+
+    if (value < 0) {
+      return Math.min(200, Math.max(-200, value));
+    } else {
+      return 0.0;
+    }
+  };
+};
+
 const filterMap = {
   peak: peakFilter,
-};
+  highpass: highpassFilter,
+  lowpass: lowpassFilter,
+} as const;
 
 export function filterFromDef(def: any) {
   const { type, ...opts } = def;
@@ -70,7 +123,7 @@ function zipToXY(x: number[], y: number[]): { x: number; y: number }[] {
 }
 
 export type Filter = {
-  type: 'peak';
+  type: keyof typeof filterMap;
   frequency: number;
   gain: number;
   q: number;
@@ -476,6 +529,121 @@ export function FilterEditor({
             ]}
           />
         </VictoryChart>
+      </div>
+
+      <div className="container">
+        <div className="row">
+          <div className="column">
+            <label>Type</label>
+            <select
+              disabled={selectedPoint == undefined}
+              value={
+                selectedPoint !== undefined
+                  ? filterDefs[selectedPoint].type
+                  : ''
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
+
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].type = event.currentTarget.value as Filter['type'];
+                  }),
+                );
+              }}
+            >
+              {selectedPoint == undefined && <option value=""></option>}
+              <option value="peak">Peak</option>
+              <option value="highpass">Highpass</option>
+              <option value="lowpass">Lowpass</option>
+            </select>
+          </div>
+          <div className="column">
+            <label>Frequency (Hz)</label>
+            <input
+              type="number"
+              disabled={
+                selectedPoint == undefined ||
+                filterDefs[selectedPoint].frequency == undefined
+              }
+              value={
+                (selectedPoint !== undefined &&
+                  filterDefs[selectedPoint].frequency) ||
+                ''
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
+
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].frequency = Number.parseFloat(
+                      event.currentTarget.value,
+                    );
+                  }),
+                );
+              }}
+            />
+          </div>
+          <div className="column">
+            <label>Gain (db)</label>
+            <input
+              type="number"
+              disabled={
+                selectedPoint == undefined ||
+                filterDefs[selectedPoint].gain == undefined
+              }
+              value={
+                (selectedPoint !== undefined &&
+                  filterDefs[selectedPoint].gain) ||
+                ''
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
+
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].gain = Number.parseFloat(
+                      event.currentTarget.value,
+                    );
+                  }),
+                );
+              }}
+            />
+          </div>
+          <div className="column">
+            <label>Q</label>
+            <input
+              type="number"
+              disabled={
+                selectedPoint == undefined ||
+                filterDefs[selectedPoint].q == undefined
+              }
+              value={
+                (selectedPoint !== undefined && filterDefs[selectedPoint].q) ||
+                ''
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
+
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].q = Number.parseFloat(
+                      event.currentTarget.value,
+                    );
+                  }),
+                );
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
