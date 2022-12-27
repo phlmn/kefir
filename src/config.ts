@@ -1,6 +1,20 @@
 import { send } from './ws';
 
-export function sendConfig(taps_bass: number[], taps_tops: number[]) {
+export type SpeakerParams = {
+  firTaps: number[];
+  delay: number;
+  limiterThreshold: number;
+  limiterRmsSamples: number;
+  limiterDecay: number;
+  postGain: number;
+  mute: boolean;
+  invertPolarity: boolean;
+};
+
+export function sendConfig(
+  topsParams: SpeakerParams,
+  bassParams: SpeakerParams,
+) {
   const cfg = `
 devices:
   samplerate: 48000
@@ -29,48 +43,50 @@ filters:
   bass_fir:
     type: Conv
     parameters:
-      values: ${JSON.stringify(taps_bass)}
+      values: ${JSON.stringify(bassParams.firTaps)}
       type: Values
   bass_post_gain:
     type: Gain
     parameters:
-      gain: 0.0
-      inverted: false
-      mute: false
+      gain: ${JSON.stringify(bassParams.postGain)}
+      inverted: ${JSON.stringify(bassParams.invertPolarity)}
+      mute: ${JSON.stringify(bassParams.mute)}
   bass_delay:
     type: Delay
     parameters:
-      delay: 0.0
+      delay: ${JSON.stringify(bassParams.delay)}
       unit: ms
       subsample: false
   bass_limiter:
     type: Limiter
     parameters:
-      threshold: 0.0
-      rms_samples: 256
+      threshold: ${JSON.stringify(bassParams.limiterThreshold)}
+      rms_samples: ${JSON.stringify(bassParams.limiterRmsSamples)}
+      decay: ${JSON.stringify(bassParams.limiterDecay)}
 
   tops_fir:
     type: Conv
     parameters:
-      values: ${JSON.stringify(taps_tops)}
+      values: ${JSON.stringify(topsParams.firTaps)}
       type: Values
   tops_post_gain:
     type: Gain
     parameters:
-      gain: 0.0
-      inverted: false
-      mute: false
+      gain: ${JSON.stringify(topsParams.postGain)}
+      inverted: ${JSON.stringify(topsParams.invertPolarity)}
+      mute: ${JSON.stringify(topsParams.mute)}
   tops_delay:
     type: Delay
     parameters:
-      delay: 0.0
+      delay: ${JSON.stringify(topsParams.delay)}
       unit: ms
       subsample: false
   tops_limiter:
     type: Limiter
     parameters:
-      threshold: 0
-      rms_samples: 256
+      threshold: ${JSON.stringify(topsParams.limiterThreshold)}
+      rms_samples: ${JSON.stringify(topsParams.limiterRmsSamples)}
+      decay: ${JSON.stringify(topsParams.limiterDecay)}
 
 mixers:
   to_2_1_channels:
