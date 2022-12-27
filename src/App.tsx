@@ -19,6 +19,9 @@ import {
 } from './fir';
 import { sendConfig } from './config';
 
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
+
 getPyodide();
 
 export function App() {
@@ -56,8 +59,10 @@ export function App() {
       ntaps,
       [0, ...frequencies, fs / 2],
       [
-        dbToAmplitude(masterData[0]),
-        ...masterData.map((d) => dbToAmplitude(d)),
+        dbToAmplitude(masterData[0]) * 2,
+        ...masterData.map(
+          (d) => (isMinimumPhase ? dbToAmplitude(d) : 1) * dbToAmplitude(d),
+        ),
         0,
       ],
     );
@@ -95,31 +100,36 @@ export function App() {
     <main className="wrapper">
       <section className="container">
         <h1>Frequency Response Editor</h1>
-      </section>
-      <section className="container">
-        <h5>House Curve</h5>
-        <FilterEditor
-          filterDefs={houseFilters}
-          setFilterDefs={setHouseFilters}
-        />
-      </section>
-      <section className="container">
-        <h5>Bass Correction</h5>
-        <FilterEditor
-          filterDefs={bassFilters}
-          setFilterDefs={setBassFilters}
-          computedGain={computedFilterBass?.gain}
-          computedPhase={computedFilterBass?.phase}
-        />
-      </section>
-      <section className="container">
-        <h5>Tops Correction</h5>
-        <FilterEditor
-          filterDefs={topsFilters}
-          setFilterDefs={setTopsFilters}
-          computedGain={computedFilterTops?.gain}
-          computedPhase={computedFilterTops?.phase}
-        />
+        <Tabs>
+          <TabList>
+            <Tab>House Curve</Tab>
+            <Tab>Bass</Tab>
+            <Tab>Tops</Tab>
+          </TabList>
+
+          <TabPanel>
+            <FilterEditor
+              filterDefs={houseFilters}
+              setFilterDefs={setHouseFilters}
+            />
+          </TabPanel>
+          <TabPanel>
+            <FilterEditor
+              filterDefs={bassFilters}
+              setFilterDefs={setBassFilters}
+              computedGain={computedFilterBass?.gain}
+              computedPhase={computedFilterBass?.phase}
+            />
+          </TabPanel>
+          <TabPanel>
+            <FilterEditor
+              filterDefs={topsFilters}
+              setFilterDefs={setTopsFilters}
+              computedGain={computedFilterTops?.gain}
+              computedPhase={computedFilterTops?.phase}
+            />
+          </TabPanel>
+        </Tabs>
       </section>
 
       <section className="container">
