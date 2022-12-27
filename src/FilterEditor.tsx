@@ -1,5 +1,4 @@
 import React, { SyntheticEvent, useRef, useState } from 'react';
-import ReactDOM from 'react-dom/client';
 import {
   SVGCoordinateType,
   VictoryArea,
@@ -13,58 +12,12 @@ import {
 import { biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
 
-import {
-  calculateTaps,
-  frequencyResponse,
-  getPyodide,
-  ifft,
-  minimumPhase,
-} from './fir';
+export function dbToAmplitude(db: number) {
+  return Math.pow(10, db / 20);
+}
 
-getPyodide();
-
-
-const ws = new WebSocket('ws://localhost:7777');
-
-function sendConfig(taps: number[]) {
-  const cfg = `
----
-devices:
-  samplerate: 44100
-  capture_samplerate: 48000
-  chunksize: 64
-  resampler_type: BalancedAsync
-  capture:
-    type: File
-    channels: 2
-    filename: ./fragments_of_time.raw
-    format: S32LE
-  playback:
-    type: CoreAudio
-    channels: 2
-    device: "default"
-    format: S16LE
-
-filters:
-  example_fir_a:
-    type: Conv
-    parameters:
-      values: ${JSON.stringify(taps)}
-      type: Values  
-
-pipeline:
-  - type: Filter
-    channel: 0
-    names:
-      - example_fir_a
-  - type: Filter
-    channel: 1
-    names:
-      - example_fir_a
-
-  `;
-  console.log(cfg);
-  ws.send(JSON.stringify({ SetConfig: cfg }));
+export function amplitudeToDb(amp: number) {
+  return Math.log10(amp) * 20;
 }
 
 const peakFilter = ({
@@ -84,7 +37,7 @@ const filterMap = {
   peak: peakFilter,
 };
 
-function filterFromDef(def: any) {
+export function filterFromDef(def: any) {
   const { type, ...opts } = def;
   const createFilterFn = (filterMap as any)[type];
 
@@ -93,7 +46,7 @@ function filterFromDef(def: any) {
   }
 }
 
-function samplingFrequencies(): number[] {
+export function samplingFrequencies(): number[] {
   const frequencies = [];
   let i = 10;
   while (i < 24000) {
@@ -103,7 +56,7 @@ function samplingFrequencies(): number[] {
   return frequencies;
 }
 
-function freqencyResponse(
+export function freqencyResponse(
   filters: Array<(f: number) => number>,
   frequencies: number[],
 ) {
@@ -116,13 +69,24 @@ function zipToXY(x: number[], y: number[]): { x: number; y: number }[] {
   return x.map((x, i) => ({ x, y: y[i] }));
 }
 
-function App() {
-  const [filterDefs, setFilterDefs] = useState([
-    { type: 'peak', frequency: 10000, gain: -1, q: 1 },
-    { type: 'peak', frequency: 100, gain: -1, q: 2 },
-    { type: 'peak', frequency: 200, gain: -1, q: 0.5 },
-    { type: 'peak', frequency: 1000, gain: -1, q: 10 },
-  ]);
+export type Filter = {
+  type: 'peak';
+  frequency: number;
+  gain: number;
+  q: number;
+};
+
+export function FilterEditor({
+  filterDefs,
+  setFilterDefs,
+  computedGain,
+  computedPhase,
+}: {
+  filterDefs: Filter[];
+  setFilterDefs: (newFilterDefs: Filter[]) => void;
+  computedGain?: Array<{ x: number; y: number }>;
+  computedPhase?: Array<{ x: number; y: number }>;
+}) {
   const filters = filterDefs.map(filterFromDef);
   const frequencies = samplingFrequencies();
   const masterGains = freqencyResponse(filters, frequencies);
@@ -131,14 +95,6 @@ function App() {
   const [selectedPoint, setSelectedPoint] = useState<number | undefined>();
   const [dragging, setDragging] = useState(false);
 
-  const [taps, setTaps] = useState<number[] | undefined>();
-  const [filterFrequencyResponse, setFilterFrequencyResponse] = useState<
-    Array<{ x: number; y: number }> | undefined
-  >();
-  const [filterPhaseResponse, setFilterPhaseResponse] = useState<
-    Array<{ x: number; y: number }> | undefined
-  >();
-
   let selectedData;
   if (selectedPoint !== undefined) {
     selectedData = zipToXY(
@@ -146,11 +102,6 @@ function App() {
       freqencyResponse([filters[selectedPoint]], frequencies),
     );
   }
-
-  const taps_total = taps?.map((x) => x * x)?.reduce((x, acc) => x + acc);
-  const latency_estimation = taps
-    ?.map((x, i) => ((x * x) / (taps_total || 0)) * i * (1000 / 48000))
-    .reduce((x, acc) => x + acc);
 
   const dbToAxis = (x: Array<{ x: number; y: number }>) =>
     x.map((x) => ({ ...x, y: x.y / 20 }));
@@ -298,7 +249,7 @@ function App() {
             data={dbToAxis(masterData)}
             interpolation="catmullRom"
           />
-          {filterFrequencyResponse && (
+          {computedGain && (
             <VictoryLine
               style={{
                 data: {
@@ -307,11 +258,11 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={dbToAxis(filterFrequencyResponse)}
+              data={dbToAxis(computedGain)}
               interpolation="catmullRom"
             />
           )}
-          {filterPhaseResponse && (
+          {computedPhase && (
             <VictoryLine
               style={{
                 data: {
@@ -320,7 +271,7 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={degToAxis(filterPhaseResponse)}
+              data={degToAxis(computedPhase)}
               interpolation="catmullRom"
             />
           )}
@@ -354,6 +305,7 @@ function App() {
                 eventHandlers: {
                   onWheel: (event, targetProps) => {
                     const e = event as React.WheelEvent;
+                    e.nativeEvent.preventDefault();
                     return [
                       {
                         target: 'data',
@@ -429,7 +381,7 @@ function App() {
             data={dbToAxis(masterData)}
             interpolation="catmullRom"
           />
-          {filterFrequencyResponse && (
+          {computedGain && (
             <VictoryLine
               style={{
                 data: {
@@ -438,11 +390,11 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={dbToAxis(filterFrequencyResponse)}
+              data={dbToAxis(computedGain)}
               interpolation="catmullRom"
             />
           )}
-          {filterPhaseResponse && (
+          {computedPhase && (
             <VictoryLine
               style={{
                 data: {
@@ -451,7 +403,7 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={degToAxis(filterPhaseResponse)}
+              data={degToAxis(computedPhase)}
               interpolation="catmullRom"
             />
           )}
@@ -485,6 +437,7 @@ function App() {
                 eventHandlers: {
                   onWheel: (event, targetProps) => {
                     const e = event as React.WheelEvent;
+                    e.nativeEvent.preventDefault();
                     return [
                       {
                         target: 'data',
@@ -524,135 +477,27 @@ function App() {
           />
         </VictoryChart>
       </div>
-
-      <button
-        onClick={async () => {
-          let taps = await calculateTaps(
-            4800,
-            [0, ...masterData.map((d) => d.x), 24000],
-            [
-              dbToAmplitude(masterData[0].y),
-              ...masterData.map((d) => dbToAmplitude(d.y)),
-              0,
-            ],
-          );
-          setTaps(taps);
-
-          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
-          const f = new Array(...w).map((freq, i) => {
-            return { x: freq, y: amplitudeToDb(gains[i]) };
-          });
-          const p = new Array(...w).map((freq, i) => {
-            return { x: freq, y: phase[i] };
-          });
-
-          setFilterFrequencyResponse(f);
-          setFilterPhaseResponse(p);
-          // sendConfig([...taps]);
-        }}
-      >
-        Calculate Linear Phase!
-      </button>
-      <button
-        onClick={async () => {
-          let taps = await calculateTaps(
-            4800,
-            [0, ...masterData.map((d) => d.x), 24000],
-            [
-              dbToAmplitude(masterData[0].y),
-              ...masterData.map((d) => dbToAmplitude(d.y) * dbToAmplitude(d.y)),
-              0,
-            ],
-          );
-          taps = await minimumPhase(taps);
-          setTaps(taps);
-
-          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
-          const f = new Array(...w).map((freq, i) => {
-            return { x: freq, y: amplitudeToDb(gains[i]) };
-          });
-          const p = new Array(...w).map((freq, i) => {
-            return { x: freq, y: phase[i] };
-          });
-
-          setFilterFrequencyResponse(f);
-          setFilterPhaseResponse(p);
-          // sendConfig([...taps]);
-        }}
-      >
-        Calculate Minimum Phase!
-      </button>
-      <button
-        onClick={async () => {
-          const N = 4800;
-          const freqs = Array(N / 2)
-            .fill(0)
-            .map((_, i) => (i / N) * 24_000);
-          const gainInput = [
-            ...freqencyResponse(filters, freqs),
-            ...freqencyResponse(filters, freqs).reverse(),
-          ];
-          const phaseInput = Array(N).fill(0);
-          const [real, imag] = await ifft(gainInput, phaseInput);
-          console.log(
-            'real sum',
-            real.map((x) => Math.abs(x)).reduce((x, a) => a + x),
-          );
-          console.log(
-            'imag sum',
-            imag.map((x) => Math.abs(x)).reduce((x, a) => a + x),
-          );
-
-          const taps = real;
-          setTaps(taps);
-          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
-          const f = new Array(...w).map((freq, i) => {
-            return { x: freq, y: amplitudeToDb(gains[i]) };
-          });
-          const p = new Array(...w).map((freq, i) => {
-            return { x: freq, y: phase[i] };
-          });
-
-          setFilterFrequencyResponse(f);
-          setFilterPhaseResponse(p);
-          // sendConfig([...taps]);
-        }}
-      >
-        Calculate Linear Phase DIY!
-      </button>
-
-      {taps && (
-        <div>
-          <div>Estimated Latency: {latency_estimation?.toFixed(2)}ms</div>
-          <textarea value={taps.join('\n')}></textarea>
-          <VictoryChart
-            theme={VictoryTheme.material}
-            style={{ parent: { maxWidth: '1200px' } }}
-            width={1200}
-            height={500}
-          >
-            <VictoryLine
-              style={{
-                data: { stroke: '#c43a31', strokeWidth: 1 },
-              }}
-              data={[...taps].map((y, i) => ({ x: i / 48, y }))}
-            />
-          </VictoryChart>
-        </div>
-      )}
     </div>
   );
 }
 
-function dbToAmplitude(db: number) {
-  return Math.pow(10, db / 20);
+export function FilterPreview({ taps }: { taps: number[] }) {
+  return (
+    <div>
+      <textarea value={taps.join('\n')}></textarea>
+      <VictoryChart
+        theme={VictoryTheme.material}
+        style={{ parent: { maxWidth: '1200px' } }}
+        width={1200}
+        height={500}
+      >
+        <VictoryLine
+          style={{
+            data: { stroke: '#c43a31', strokeWidth: 1 },
+          }}
+          data={[...taps].map((y, i) => ({ x: i / 48, y }))}
+        />
+      </VictoryChart>
+    </div>
+  );
 }
-
-function amplitudeToDb(amp: number) {
-  return Math.log10(amp) * 20;
-}
-
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement,
-);
-root.render(<App />);

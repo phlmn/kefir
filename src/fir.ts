@@ -76,3 +76,10 @@ def fn(taps, frequencies):
   phase = np.angle(h, deg=True)
   return w, gain, phase
 `);
+
+export function estimate_latency(taps: number[]): number {
+  const taps_total = taps?.map((x) => x * x)?.reduce((x, acc) => x + acc);
+  return taps
+    ?.map((x, i) => ((x * x) / (taps_total || 0)) * i * (1000 / 48000))
+    .reduce((x, acc) => x + acc);
+}
