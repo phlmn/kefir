@@ -17,10 +17,11 @@ import {
   getPyodide,
   minimumPhase,
 } from './fir';
-import { sendConfig } from './config';
+import { saveConfig, sendConfig } from './config';
 
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
+import { useLocalStorage } from './useLocalStorage';
 
 getPyodide();
 
@@ -28,9 +29,9 @@ export function App() {
   const ntaps = 4800;
   const fs = 48000;
 
-  const [houseFilters, setHouseFilters] = useState([] as Filter[]);
-  const [bassFilters, setBassFilters] = useState([] as Filter[]);
-  const [topsFilters, setTopsFilters] = useState([] as Filter[]);
+  const [houseFilters, setHouseFilters] = useLocalStorage("houseFilters", [] as Filter[]);
+  const [bassFilters, setBassFilters] = useLocalStorage("bassFilters", [] as Filter[]);
+  const [topsFilters, setTopsFilters] = useLocalStorage("topsFilters", [] as Filter[]);
 
   const [isMinimumPhase, setMinimumPhase] = useState(true);
 
@@ -96,11 +97,11 @@ export function App() {
     await sendConfig(
       {
         firTaps: topsFilter.taps,
-        delay: 0,
+        delay: 6,
         invertPolarity: false,
         limiterDecay: 12,
         limiterRmsSamples: 256,
-        limiterThreshold: 0,
+        limiterThreshold: -6.0,
         mute: false,
         postGain: 0,
       },
@@ -110,7 +111,7 @@ export function App() {
         invertPolarity: false,
         limiterDecay: 12,
         limiterRmsSamples: 256,
-        limiterThreshold: 0,
+        limiterThreshold: -6.0,
         mute: false,
         postGain: 0,
       },
@@ -195,6 +196,7 @@ export function App() {
         </label>
 
         <button onClick={calculate}>calculate filter</button>
+        <button onClick={saveConfig}>store config</button>
       </section>
     </main>
   );

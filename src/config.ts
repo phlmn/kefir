@@ -196,3 +196,7 @@ pipeline:
 `;
   return send({ SetConfig: cfg });
 }
+
+export function saveConfig() {
+  return send({ WriteConfigFile: 'camillaconfig-full.yaml' });
+}
