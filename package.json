@@ -9,7 +9,7 @@
   "dependencies": {
     "@thi.ng/dsp": "^4.2.24",
     "prettier": "^2.7.1",
-    "pyodide": "0.21.3",
+    "pyodide": "0.27.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "victory": "36.6.8"
