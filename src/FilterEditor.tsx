@@ -1,5 +1,4 @@
 import React, { SyntheticEvent, useRef, useState } from 'react';
-import ReactDOM from 'react-dom/client';
 import {
   SVGCoordinateType,
   VictoryArea,
@@ -12,16 +11,15 @@ import {
 } from 'victory';
 import { biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
+import produce from 'immer';
 
-import {
-  calculateTaps,
-  frequencyResponse,
-  getPyodide,
-  ifft,
-  minimumPhase,
-} from './fir';
+export function dbToAmplitude(db: number) {
+  return Math.pow(10, db / 20);
+}
 
-getPyodide();
+export function amplitudeToDb(amp: number) {
+  return Math.log10(amp) * 20;
+}
 
 const peakFilter = ({
   frequency,
@@ -36,11 +34,63 @@ const peakFilter = ({
   return (f: number) => filterResponse(coeffs, f / 48000).mag;
 };
 
-const filterMap = {
-  peak: peakFilter,
+const highpassFilter = ({
+  frequency,
+  gain,
+  q,
+}: {
+  frequency: number;
+  gain: number;
+  q: number;
+}) => {
+  return (f: number) => {
+    if (gain >= 0) {
+      return 0.0;
+    }
+
+    let offset = frequency / f;
+    let value = (Math.log2(offset) * -q) - 6;
+
+    if (value < 0) {
+      return Math.min(200, Math.max(-200, value));
+    } else {
+      return 0.0;
+    }
+  };
 };
 
-function filterFromDef(def: any) {
+const lowpassFilter = ({
+  frequency,
+  gain,
+  q,
+}: {
+  frequency: number;
+  gain: number;
+  q: number;
+}) => {
+  return (f: number) => {
+    if (gain >= 0) {
+      return 0.0;
+    }
+
+    let offset = f / frequency;
+    let value = (Math.log2(offset) * -q) - 6;
+
+    if (value < 0) {
+      return Math.min(200, Math.max(-200, value));
+    } else {
+      return 0.0;
+    }
+  };
+};
+
+const filterMap = {
+  peak: peakFilter,
+  highpass: highpassFilter,
+  lowpass: lowpassFilter,
+} as const;
+
+export function filterFromDef(def: any) {
   const { type, ...opts } = def;
   const createFilterFn = (filterMap as any)[type];
 
@@ -49,7 +99,7 @@ function filterFromDef(def: any) {
   }
 }
 
-function samplingFrequencies(): number[] {
+export function samplingFrequencies(): number[] {
   const frequencies = [];
   let i = 10;
   while (i < 24000) {
@@ -59,7 +109,7 @@ function samplingFrequencies(): number[] {
   return frequencies;
 }
 
-function freqencyResponse(
+export function freqencyResponse(
   filters: Array<(f: number) => number>,
   frequencies: number[],
 ) {
@@ -72,13 +122,24 @@ function zipToXY(x: number[], y: number[]): { x: number; y: number }[] {
   return x.map((x, i) => ({ x, y: y[i] }));
 }
 
-function App() {
-  const [filterDefs, setFilterDefs] = useState([
-    { type: 'peak', frequency: 10000, gain: -1, q: 1 },
-    { type: 'peak', frequency: 100, gain: -1, q: 2 },
-    { type: 'peak', frequency: 200, gain: -1, q: 0.5 },
-    { type: 'peak', frequency: 1000, gain: -1, q: 10 },
-  ]);
+export type Filter = {
+  type: keyof typeof filterMap;
+  frequency: number;
+  gain: number;
+  q: number;
+};
+
+export function FilterEditor({
+  filterDefs,
+  setFilterDefs,
+  computedGain,
+  computedPhase,
+}: {
+  filterDefs: Filter[];
+  setFilterDefs: (newFilterDefs: Filter[]) => void;
+  computedGain?: Array<{ x: number; y: number }>;
+  computedPhase?: Array<{ x: number; y: number }>;
+}) {
   const filters = filterDefs.map(filterFromDef);
   const frequencies = samplingFrequencies();
   const masterGains = freqencyResponse(filters, frequencies);
@@ -87,14 +148,6 @@ function App() {
   const [selectedPoint, setSelectedPoint] = useState<number | undefined>();
   const [dragging, setDragging] = useState(false);
 
-  const [taps, setTaps] = useState<number[] | undefined>();
-  const [filterFrequencyResponse, setFilterFrequencyResponse] = useState<
-    Array<{ x: number; y: number }> | undefined
-  >();
-  const [filterPhaseResponse, setFilterPhaseResponse] = useState<
-    Array<{ x: number; y: number }> | undefined
-  >();
-
   let selectedData;
   if (selectedPoint !== undefined) {
     selectedData = zipToXY(
@@ -102,11 +155,6 @@ function App() {
       freqencyResponse([filters[selectedPoint]], frequencies),
     );
   }
-
-  const taps_total = taps?.map((x) => x * x)?.reduce((x, acc) => x + acc);
-  const latency_estimation = taps
-    ?.map((x, i) => ((x * x) / (taps_total || 0)) * i * (1000 / 48000))
-    .reduce((x, acc) => x + acc);
 
   const dbToAxis = (x: Array<{ x: number; y: number }>) =>
     x.map((x) => ({ ...x, y: x.y / 20 }));
@@ -254,7 +302,7 @@ function App() {
             data={dbToAxis(masterData)}
             interpolation="catmullRom"
           />
-          {filterFrequencyResponse && (
+          {computedGain && (
             <VictoryLine
               style={{
                 data: {
@@ -263,11 +311,11 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={dbToAxis(filterFrequencyResponse)}
+              data={dbToAxis(computedGain)}
               interpolation="catmullRom"
             />
           )}
-          {filterPhaseResponse && (
+          {computedPhase && (
             <VictoryLine
               style={{
                 data: {
@@ -276,7 +324,7 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={degToAxis(filterPhaseResponse)}
+              data={degToAxis(computedPhase)}
               interpolation="catmullRom"
             />
           )}
@@ -301,15 +349,16 @@ function App() {
                 strokeOpacity: 1.0,
                 stroke: 'white',
                 cursor: 'pointer',
-                fill: (d) => (d.index === selectedPoint ? '#c43a31' : '#555'),
+                fill: (d: any) => (d.index === selectedPoint ? '#c43a31' : '#555'),
               },
             }}
             events={[
               {
                 target: 'data',
                 eventHandlers: {
-                  onWheel: (event, targetProps) => {
+                  onWheel: (event: unknown, targetProps: unknown) => {
                     const e = event as React.WheelEvent;
+                    e.nativeEvent.preventDefault();
                     return [
                       {
                         target: 'data',
@@ -385,7 +434,7 @@ function App() {
             data={dbToAxis(masterData)}
             interpolation="catmullRom"
           />
-          {filterFrequencyResponse && (
+          {computedGain && (
             <VictoryLine
               style={{
                 data: {
@@ -394,11 +443,11 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={dbToAxis(filterFrequencyResponse)}
+              data={dbToAxis(computedGain)}
               interpolation="catmullRom"
             />
           )}
-          {filterPhaseResponse && (
+          {computedPhase && (
             <VictoryLine
               style={{
                 data: {
@@ -407,7 +456,7 @@ function App() {
                   strokeDasharray: '2,2',
                 },
               }}
-              data={degToAxis(filterPhaseResponse)}
+              data={degToAxis(computedPhase)}
               interpolation="catmullRom"
             />
           )}
@@ -432,15 +481,16 @@ function App() {
                 strokeOpacity: 1.0,
                 stroke: 'white',
                 cursor: 'pointer',
-                fill: (d) => (d.index === selectedPoint ? '#c43a31' : '#555'),
+                fill: (d: any) => (d.index === selectedPoint ? '#c43a31' : '#555'),
               },
             }}
             events={[
               {
                 target: 'data',
                 eventHandlers: {
-                  onWheel: (event, targetProps) => {
+                  onWheel: (event: unknown, targetProps: unknown) => {
                     const e = event as React.WheelEvent;
+                    e.nativeEvent.preventDefault();
                     return [
                       {
                         target: 'data',
@@ -481,131 +531,141 @@ function App() {
         </VictoryChart>
       </div>
 
-      <button
-        onClick={async () => {
-          let taps = await calculateTaps(
-            4800,
-            [0, ...masterData.map((d) => d.x), 24000],
-            [
-              dbToAmplitude(masterData[0].y),
-              ...masterData.map((d) => dbToAmplitude(d.y)),
-              0,
-            ],
-          );
-          setTaps(taps);
+      <div className="container">
+        <div className="row">
+          <div className="column">
+            <label>Type</label>
+            <select
+              disabled={selectedPoint == undefined}
+              value={
+                selectedPoint !== undefined
+                  ? filterDefs[selectedPoint].type
+                  : ''
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
 
-          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
-          const f = new Array(...w).map((freq, i) => {
-            return { x: freq, y: amplitudeToDb(gains[i]) };
-          });
-          const p = new Array(...w).map((freq, i) => {
-            return { x: freq, y: phase[i] };
-          });
-
-          setFilterFrequencyResponse(f);
-          setFilterPhaseResponse(p);
-        }}
-      >
-        Calculate Linear Phase!
-      </button>
-      <button
-        onClick={async () => {
-          let taps = await calculateTaps(
-            4800,
-            [0, ...masterData.map((d) => d.x), 24000],
-            [
-              dbToAmplitude(masterData[0].y),
-              ...masterData.map((d) => dbToAmplitude(d.y) * dbToAmplitude(d.y)),
-              0,
-            ],
-          );
-          taps = await minimumPhase(taps);
-          setTaps(taps);
-
-          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
-          const f = new Array(...w).map((freq, i) => {
-            return { x: freq, y: amplitudeToDb(gains[i]) };
-          });
-          const p = new Array(...w).map((freq, i) => {
-            return { x: freq, y: phase[i] };
-          });
-
-          setFilterFrequencyResponse(f);
-          setFilterPhaseResponse(p);
-        }}
-      >
-        Calculate Minimum Phase!
-      </button>
-      <button
-        onClick={async () => {
-          const N = 4800;
-          const freqs = Array(N / 2)
-            .fill(0)
-            .map((_, i) => (i / N) * 24_000);
-          const gainInput = [
-            ...freqencyResponse(filters, freqs),
-            ...freqencyResponse(filters, freqs).reverse(),
-          ];
-          const phaseInput = Array(N).fill(0);
-          const [real, imag] = await ifft(gainInput, phaseInput);
-          console.log(
-            'real sum',
-            real.map((x) => Math.abs(x)).reduce((x, a) => a + x),
-          );
-          console.log(
-            'imag sum',
-            imag.map((x) => Math.abs(x)).reduce((x, a) => a + x),
-          );
-
-          const taps = real.slice(0, N / 2);
-          setTaps(taps);
-          const [w, gains, phase] = await frequencyResponse(taps, frequencies);
-          const f = new Array(...w).map((freq, i) => {
-            return { x: freq, y: amplitudeToDb(gains[i]) };
-          });
-          const p = new Array(...w).map((freq, i) => {
-            return { x: freq, y: phase[i] };
-          });
-
-          setFilterFrequencyResponse(f);
-          setFilterPhaseResponse(p);
-        }}
-      >
-        Calculate Linear Phase DIY!
-      </button>
-
-      {taps && (
-        <div>
-          <div>Estimated Latency: {latency_estimation?.toFixed(2)}ms</div>
-          <textarea value={taps.join('\n')}></textarea>
-          <VictoryChart
-            theme={VictoryTheme.material}
-            style={{ parent: { maxWidth: '1200px' } }}
-            width={1200}
-            height={500}
-          >
-            <VictoryLine
-              style={{
-                data: { stroke: '#c43a31', strokeWidth: 1 },
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].type = event.currentTarget.value as Filter['type'];
+                  }),
+                );
               }}
-              data={[...taps].map((y, i) => ({ x: i / 48, y }))}
+            >
+              {selectedPoint == undefined && <option value=""></option>}
+              <option value="peak">Peak</option>
+              <option value="highpass">Highpass</option>
+              <option value="lowpass">Lowpass</option>
+            </select>
+          </div>
+          <div className="column">
+            <label>Frequency (Hz)</label>
+            <input
+              type="number"
+              disabled={
+                selectedPoint == undefined ||
+                filterDefs[selectedPoint].frequency == undefined
+              }
+              value={
+                (selectedPoint !== undefined &&
+                  filterDefs[selectedPoint].frequency) ||
+                ''
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
+
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].frequency = Number.parseFloat(
+                      event.currentTarget.value,
+                    );
+                  }),
+                );
+              }}
             />
-          </VictoryChart>
+          </div>
+          <div className="column">
+            <label>Gain (db)</label>
+            <input
+              type="number"
+              disabled={
+                selectedPoint == undefined ||
+                filterDefs[selectedPoint].gain == undefined
+              }
+              value={
+                (selectedPoint !== undefined &&
+                  filterDefs[selectedPoint].gain) ||
+                ''
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
+
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].gain = Number.parseFloat(
+                      event.currentTarget.value,
+                    );
+                  }),
+                );
+              }}
+            />
+          </div>
+          <div className="column">
+            <label>Q</label>
+            <input
+              type="number"
+              disabled={
+                selectedPoint == undefined ||
+                filterDefs[selectedPoint].q == undefined
+              }
+              value={
+                (selectedPoint !== undefined && filterDefs[selectedPoint].q) ||
+                ''
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
+
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].q = Number.parseFloat(
+                      event.currentTarget.value,
+                    );
+                  }),
+                );
+              }}
+            />
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-function dbToAmplitude(db: number) {
-  return Math.pow(10, db / 20);
+export function FilterPreview({ taps }: { taps: number[] }) {
+  return (
+    <div>
+      <textarea value={taps.join('\n')}></textarea>
+      <VictoryChart
+        theme={VictoryTheme.material}
+        style={{ parent: { maxWidth: '1200px' } }}
+        width={1200}
+        height={500}
+      >
+        <VictoryLine
+          style={{
+            data: { stroke: '#c43a31', strokeWidth: 1 },
+          }}
+          data={[...taps].map((y, i) => ({ x: i / 48, y }))}
+        />
+      </VictoryChart>
+    </div>
+  );
 }
-
-function amplitudeToDb(amp: number) {
-  return Math.log10(amp) * 20;
-}
-
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement,
-);
-root.render(<App />);
