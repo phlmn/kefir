@@ -44,3 +44,9 @@ export function send(to_send: string | Record<string, any>): Promise<any> {
 }
 
 window.send = send;
+
+declare global {
+  interface Window {
+    send: typeof send;
+  }
+}

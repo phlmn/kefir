@@ -349,14 +349,14 @@ export function FilterEditor({
                 strokeOpacity: 1.0,
                 stroke: 'white',
                 cursor: 'pointer',
-                fill: (d) => (d.index === selectedPoint ? '#c43a31' : '#555'),
+                fill: (d: any) => (d.index === selectedPoint ? '#c43a31' : '#555'),
               },
             }}
             events={[
               {
                 target: 'data',
                 eventHandlers: {
-                  onWheel: (event, targetProps) => {
+                  onWheel: (event: unknown, targetProps: unknown) => {
                     const e = event as React.WheelEvent;
                     e.nativeEvent.preventDefault();
                     return [
@@ -481,14 +481,14 @@ export function FilterEditor({
                 strokeOpacity: 1.0,
                 stroke: 'white',
                 cursor: 'pointer',
-                fill: (d) => (d.index === selectedPoint ? '#c43a31' : '#555'),
+                fill: (d: any) => (d.index === selectedPoint ? '#c43a31' : '#555'),
               },
             }}
             events={[
               {
                 target: 'data',
                 eventHandlers: {
-                  onWheel: (event, targetProps) => {
+                  onWheel: (event: unknown, targetProps: unknown) => {
                     const e = event as React.WheelEvent;
                     e.nativeEvent.preventDefault();
                     return [
