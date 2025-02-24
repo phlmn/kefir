@@ -49,7 +49,7 @@ const highpassFilter = ({
     }
 
     let offset = frequency / f;
-    let value = (Math.log2(offset) * gain) - 6;
+    let value = (Math.log2(offset) * -q) - 6;
 
     if (value < 0) {
       return Math.min(200, Math.max(-200, value));
@@ -74,7 +74,7 @@ const lowpassFilter = ({
     }
 
     let offset = f / frequency;
-    let value = (Math.log2(offset) * gain) - 6;
+    let value = (Math.log2(offset) * -q) - 6;
 
     if (value < 0) {
       return Math.min(200, Math.max(-200, value));

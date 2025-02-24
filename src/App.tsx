@@ -22,6 +22,7 @@ import { saveConfig, sendConfig } from './config';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 import { useLocalStorage } from './useLocalStorage';
+import { ChannelSettings } from './ChannelSettings';
 
 getPyodide();
 
@@ -97,23 +98,33 @@ export function App() {
     await sendConfig(
       {
         firTaps: topsFilter.taps,
-        delay: 6,
-        invertPolarity: false,
         limiterDecay: 12,
         limiterRmsSamples: 256,
-        limiterThreshold: -6.0,
-        mute: false,
-        postGain: 0,
+        limiterThreshold: 0,
       },
       {
         firTaps: bassFilter.taps,
-        delay: 0,
-        invertPolarity: false,
         limiterDecay: 12,
         limiterRmsSamples: 256,
-        limiterThreshold: -6.0,
-        mute: false,
-        postGain: 0,
+        limiterThreshold: 0,
+      },
+      {
+        ch1: 8, // ms
+        ch2: 8, // ms
+        ch3: 0,
+        ch4: 0,
+      },
+       {
+        ch1: false,
+        ch2: false,
+        ch3: false,
+        ch4: true,
+       },
+       {
+        ch1: 6, // db
+        ch2: 6, // db
+        ch3: 0,
+        ch4: 0,
       },
     );
   };
@@ -127,6 +138,10 @@ export function App() {
             <Tab>House Curve</Tab>
             <Tab>Bass</Tab>
             <Tab>Tops</Tab>
+            <Tab>Channel 1</Tab>
+            <Tab>Channel 2</Tab>
+            <Tab>Channel 3</Tab>
+            <Tab>Channel 4</Tab>
           </TabList>
 
           <TabPanel>
@@ -136,37 +151,6 @@ export function App() {
             />
           </TabPanel>
           <TabPanel>
-            <div className="container">
-              <div className="row">
-                <div className="column">
-                  <label>Post Gain (db)</label>
-                  <input />
-                  <label>
-                    <input type="checkbox" />
-                    Mute
-                  </label>
-                </div>
-                <div className="column">
-                  <label>Delay (ms)</label>
-                  <input />
-                  <label>
-                    <input type="checkbox" />
-                    Invert Polarity
-                  </label>
-                </div>
-                <div className="column">
-                  <label>Limiter Threshold (db)</label>
-                  <input />
-                  <label>Limiter Decay (db/s)</label>
-                  <input />
-                </div>
-                <div className="column">
-                  <label>Limiter RMS Samples</label>
-                  <input />
-                </div>
-              </div>
-            </div>
-
             <FilterEditor
               filterDefs={bassFilters}
               setFilterDefs={setBassFilters}
@@ -182,6 +166,18 @@ export function App() {
               computedPhase={computedFilterTops?.phase}
             />
           </TabPanel>
+          <TabPanel>
+            <ChannelSettings/>
+          </TabPanel>
+          <TabPanel>
+            <ChannelSettings/>
+          </TabPanel>
+          <TabPanel>
+            <ChannelSettings/>
+          </TabPanel>
+          <TabPanel>
+            <ChannelSettings/>
+          </TabPanel>
         </Tabs>
       </section>
 
@@ -195,7 +191,8 @@ export function App() {
           minimum phase
         </label>
 
-        <button onClick={calculate}>calculate filter</button>
+        <button onClick={calculate}>apply</button>
+        {' '}
         <button onClick={saveConfig}>store config</button>
       </section>
     </main>

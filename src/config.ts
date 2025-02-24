@@ -2,37 +2,36 @@ import { send } from './ws';
 
 export type SpeakerParams = {
   firTaps: number[];
-  delay: number;
   limiterThreshold: number;
   limiterRmsSamples: number;
   limiterDecay: number;
-  postGain: number;
-  mute: boolean;
-  invertPolarity: boolean;
 };
 
 export function sendConfig(
   topsParams: SpeakerParams,
   bassParams: SpeakerParams,
+  delays: { ch1: number; ch2: number; ch3: number; ch4: number },
+  invert: { ch1: boolean; ch2: boolean; ch3: boolean; ch4: boolean },
+  gain: { ch1: number; ch2: number; ch3: number; ch4: number },
 ) {
   const cfg = `
 devices:
   samplerate: 48000
   capture_samplerate: 48000
   chunksize: 64
-  enable_rate_adjust: true
-  enable_resampling: true
-  resampler_type: BalancedAsync
+#  enable_rate_adjust: true
+#  enable_resampling: true
+#  resampler_type: BalancedAsync
   capture:
     type: Alsa
-    device: "hw:CARD=CODEC"
+    device: "plughw:CARD=UMC1820"
     channels: 2
-    format: S16LE
+    format: S24LE
   playback:
     type: Alsa
-    device: "hw:CARD=CODEC"
-    channels: 2
-    format: S16LE
+    device: "plughw:CARD=UMC1820"
+    channels: 6
+    format: S24LE
 
 filters:
   overall_volume:
@@ -45,18 +44,32 @@ filters:
     parameters:
       values: ${JSON.stringify(bassParams.firTaps)}
       type: Values
-  bass_post_gain:
-    type: Gain
-    parameters:
-      gain: ${JSON.stringify(bassParams.postGain)}
-      inverted: ${JSON.stringify(bassParams.invertPolarity)}
-      mute: ${JSON.stringify(bassParams.mute)}
-  bass_delay:
+
+  ch1_delay:
     type: Delay
     parameters:
-      delay: ${JSON.stringify(bassParams.delay)}
+      delay: ${JSON.stringify(delays.ch1)}
       unit: ms
       subsample: false
+  ch2_delay:
+    type: Delay
+    parameters:
+      delay: ${JSON.stringify(delays.ch2)}
+      unit: ms
+      subsample: false
+  ch3_delay:
+    type: Delay
+    parameters:
+      delay: ${JSON.stringify(delays.ch3)}
+      unit: ms
+      subsample: false
+  ch4_delay:
+    type: Delay
+    parameters:
+      delay: ${JSON.stringify(delays.ch4)}
+      unit: ms
+      subsample: false
+
   bass_limiter:
     type: Limiter
     parameters:
@@ -69,18 +82,7 @@ filters:
     parameters:
       values: ${JSON.stringify(topsParams.firTaps)}
       type: Values
-  tops_post_gain:
-    type: Gain
-    parameters:
-      gain: ${JSON.stringify(topsParams.postGain)}
-      inverted: ${JSON.stringify(topsParams.invertPolarity)}
-      mute: ${JSON.stringify(topsParams.mute)}
-  tops_delay:
-    type: Delay
-    parameters:
-      delay: ${JSON.stringify(topsParams.delay)}
-      unit: ms
-      subsample: false
+
   tops_limiter:
     type: Limiter
     parameters:
@@ -92,32 +94,6 @@ mixers:
   to_2_1_channels:
     channels:
       in: 2
-      out: 3
-    mapping:
-      - dest: 0
-        mute: false
-        sources:
-          - channel: 0
-            gain: 0
-            inverted: false
-      - dest: 1
-        mute: false
-        sources:
-          - channel: 1
-            gain: 0
-            inverted: false
-      - dest: 2
-        mute: false
-        sources:
-          - channel: 0
-            gain: -6
-            inverted: false
-          - channel: 1
-            gain: -6
-            inverted: false
-  btl_bass:
-    channels:
-      in: 3
       out: 4
     mapping:
       - dest: 0
@@ -130,19 +106,21 @@ mixers:
             gain: 0
       - dest: 2
         sources:
-          - channel: 2
-            gain: 0
-            inverted: false
+          - channel: 0
+            gain: -6
+          - channel: 1
+            gain: -6
       - dest: 3
         sources:
-          - channel: 2
-            gain: 0
-            inverted: false
+          - channel: 0
+            gain: -6
+          - channel: 1
+            gain: -6
 
-  to_2_ch:
+  3_ch_to_4_ch:
     channels:
-      in: 3
-      out: 2
+      in: 4
+      out: 5
     mapping:
       - dest: 0
         sources:
@@ -152,6 +130,50 @@ mixers:
         sources:
           - channel: 1
             gain: 0
+      - dest: 2
+        sources:
+          - channel: 2
+            gain: 0
+      - dest: 3
+        sources:
+          - channel: 2
+            gain: 0
+      - dest: 4
+        sources:
+          - channel: 3
+            gain: 0
+
+  inverter:
+    channels:
+      in: 5
+      out: 6
+    mapping:
+      - dest: 0
+        sources:
+          - channel: 0
+            gain: ${JSON.stringify(gain.ch1)}
+            inverted: ${JSON.stringify(invert.ch1)}
+      - dest: 1
+        sources:
+          - channel: 1
+            gain: ${JSON.stringify(gain.ch2)}
+            inverted: ${JSON.stringify(invert.ch2)}
+      - dest: 2
+        sources:
+          - channel: 2
+            gain: ${JSON.stringify(gain.ch3)}
+            inverted: ${JSON.stringify(invert.ch3)}
+      - dest: 3
+        sources:
+          - channel: 3
+            gain: ${JSON.stringify(gain.ch4)}
+            inverted: ${JSON.stringify(invert.ch4)}
+      - dest: 4
+        sources:
+          - channel: 4
+      - dest: 5
+        sources:
+          - channel: 4
 
 pipeline:
   - type: Filter
@@ -171,28 +193,46 @@ pipeline:
     channel: 0
     names:
       - tops_fir
-      - tops_post_gain
-      - tops_limiter
-      - tops_delay
 
   - type: Filter
     channel: 1
     names:
       - tops_fir
-      - tops_post_gain
-      - tops_limiter
-      - tops_delay
 
   - type: Filter
     channel: 2
     names:
       - bass_fir
-      - bass_post_gain
-      - bass_limiter
-      - bass_delay
 
   - type: Mixer
-    name: to_2_ch
+    name: 3_ch_to_4_ch
+
+  - type: Mixer
+    name: inverter
+
+  - type: Filter
+    channel: 0
+    names:
+      - ch1_delay
+      - tops_limiter
+
+  - type: Filter
+    channel: 1
+    names:
+      - ch2_delay
+      - tops_limiter
+
+  - type: Filter
+    channel: 2
+    names:
+      - ch3_delay
+      - bass_limiter
+
+  - type: Filter
+    channel: 3
+    names:
+      - ch4_delay
+      - bass_limiter
 `;
   return send({ SetConfig: cfg });
 }
