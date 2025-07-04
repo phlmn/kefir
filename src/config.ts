@@ -7,234 +7,140 @@ export type SpeakerParams = {
   limiterDecay: number;
 };
 
-export function sendConfig(
-  topsParams: SpeakerParams,
-  bassParams: SpeakerParams,
-  delays: { ch1: number; ch2: number; ch3: number; ch4: number },
-  invert: { ch1: boolean; ch2: boolean; ch3: boolean; ch4: boolean },
-  gain: { ch1: number; ch2: number; ch3: number; ch4: number },
-) {
-  const cfg = `
-devices:
-  samplerate: 48000
-  capture_samplerate: 48000
-  chunksize: 64
-#  enable_rate_adjust: true
-#  enable_resampling: true
-#  resampler_type: BalancedAsync
-  capture:
-    type: Alsa
-    device: "plughw:CARD=UMC1820"
-    channels: 2
-    format: S24LE
-  playback:
-    type: Alsa
-    device: "plughw:CARD=UMC1820"
-    channels: 6
-    format: S24LE
+export type ChannelSettings = {
+  delayInMs: number;
+  source: number;
+  gain: number;
+  inverted: boolean;
+  limiter: {
+    threshold: number;
+    rmsSamples: number;
+    decay: number;
+  };
+  firTaps: number[];
+};
 
-filters:
-  overall_volume:
-    type: Volume
-    parameters:
-      ramp_time: 200
+export type InputSettings = {
+  gain: number;
+};
 
-  bass_fir:
-    type: Conv
-    parameters:
-      values: ${JSON.stringify(bassParams.firTaps)}
-      type: Values
+function createChannelConfig(channel: number, settings: ChannelSettings) {
+  const filters = [];
 
-  ch1_delay:
-    type: Delay
-    parameters:
-      delay: ${JSON.stringify(delays.ch1)}
-      unit: ms
-      subsample: false
-  ch2_delay:
-    type: Delay
-    parameters:
-      delay: ${JSON.stringify(delays.ch2)}
-      unit: ms
-      subsample: false
-  ch3_delay:
-    type: Delay
-    parameters:
-      delay: ${JSON.stringify(delays.ch3)}
-      unit: ms
-      subsample: false
-  ch4_delay:
-    type: Delay
-    parameters:
-      delay: ${JSON.stringify(delays.ch4)}
-      unit: ms
-      subsample: false
+  const filterName = (name: string) => `ch${channel}_${name}`;
 
-  bass_limiter:
-    type: Limiter
-    parameters:
-      threshold: ${JSON.stringify(bassParams.limiterThreshold)}
-      rms_samples: ${JSON.stringify(bassParams.limiterRmsSamples)}
-      decay: ${JSON.stringify(bassParams.limiterDecay)}
+  filters.push({
+    name: filterName('delay'),
+    config: {
+      type: 'Delay',
+      parameters: {
+        delay: settings.delayInMs,
+        unit: 'ms',
+        subsample: false,
+      },
+    },
+  });
 
-  tops_fir:
-    type: Conv
-    parameters:
-      values: ${JSON.stringify(topsParams.firTaps)}
-      type: Values
+  filters.push({
+    name: filterName('fir'),
+    config: {
+      type: 'Conv',
+      parameters: {
+        values: settings.firTaps,
+        type: 'Values',
+      },
+    },
+  });
 
-  tops_limiter:
-    type: Limiter
-    parameters:
-      threshold: ${JSON.stringify(topsParams.limiterThreshold)}
-      rms_samples: ${JSON.stringify(topsParams.limiterRmsSamples)}
-      decay: ${JSON.stringify(topsParams.limiterDecay)}
+  filters.push({
+    name: filterName('limiter'),
+    config: {
+      type: 'Limiter',
+      parameters: {
+        threshold: settings.limiter.threshold,
+        rmsSamples: settings.limiter.rmsSamples,
+        decay: settings.limiter.decay,
+      },
+    },
+  });
 
-mixers:
-  to_2_1_channels:
-    channels:
-      in: 2
-      out: 4
-    mapping:
-      - dest: 0
-        sources:
-          - channel: 0
-            gain: 0
-      - dest: 1
-        sources:
-          - channel: 1
-            gain: 0
-      - dest: 2
-        sources:
-          - channel: 0
-            gain: -6
-          - channel: 1
-            gain: -6
-      - dest: 3
-        sources:
-          - channel: 0
-            gain: -6
-          - channel: 1
-            gain: -6
+  // Pipelines
+  const pipelines = [];
+  filters.forEach((filter) => {
+    pipelines.push({
+      type: 'Filter',
+      channel: channel,
+      names: [filter.name],
+    });
+  });
 
-  3_ch_to_4_ch:
-    channels:
-      in: 4
-      out: 5
-    mapping:
-      - dest: 0
-        sources:
-          - channel: 0
-            gain: 0
-      - dest: 1
-        sources:
-          - channel: 1
-            gain: 0
-      - dest: 2
-        sources:
-          - channel: 2
-            gain: 0
-      - dest: 3
-        sources:
-          - channel: 2
-            gain: 0
-      - dest: 4
-        sources:
-          - channel: 3
-            gain: 0
+  return {
+    source: settings.source,
+    gain: settings.gain,
+    inverted: settings.inverted,
+    filters: filters,
+    pipelines: [],
+  };
+}
 
-  inverter:
-    channels:
-      in: 5
-      out: 6
-    mapping:
-      - dest: 0
-        sources:
-          - channel: 0
-            gain: ${JSON.stringify(gain.ch1)}
-            inverted: ${JSON.stringify(invert.ch1)}
-      - dest: 1
-        sources:
-          - channel: 1
-            gain: ${JSON.stringify(gain.ch2)}
-            inverted: ${JSON.stringify(invert.ch2)}
-      - dest: 2
-        sources:
-          - channel: 2
-            gain: ${JSON.stringify(gain.ch3)}
-            inverted: ${JSON.stringify(invert.ch3)}
-      - dest: 3
-        sources:
-          - channel: 3
-            gain: ${JSON.stringify(gain.ch4)}
-            inverted: ${JSON.stringify(invert.ch4)}
-      - dest: 4
-        sources:
-          - channel: 4
-      - dest: 5
-        sources:
-          - channel: 4
+export function buildConfig(inChannels: InputSettings[], channels: ChannelSettings[]) {
+  const config = {
+    devices: {
+      samplerate: 48000,
+      capture_samplerate: 48000,
+      chunksize: 64,
+      capture: {
+        type: 'Alsa',
+        device: 'plughw:CARD=UMC1820',
+        channels: inChannels.length,
+        format: 'S24LE',
+      },
+      playback: {
+        type: 'Alsa',
+        device: 'plughw:CARD=UMC1820',
+        channels: channels.length,
+        format: 'S24LE',
+      },
+    },
+    filters: {} as Record<string, any>,
+    mixers: {
+      input_to_channels: {
+        channels: {
+          in: inChannels.length,
+          out: channels.length,
+        },
+        mapping: channels.map((c, index) => ({
+          dest: index,
+          sources: [
+            {
+              channel: c.source,
+              gain: c.gain,
+              inverted: c.inverted,
+            },
+          ]
+        })),
+      },
+    },
+    pipelines: [{
+      type: 'Mixer',
+      name: 'input_to_channels',
+    }],
+  };
 
-pipeline:
-  - type: Filter
-    channel: 0
-    names:
-      - overall_volume
+  channels.forEach((channel, index) => {
+    const channelConfig = createChannelConfig(index, channel);
 
-  - type: Filter
-    channel: 1
-    names:
-      - overall_volume
+    channelConfig.filters.forEach((filter) => {
+      config.filters[filter.name] = filter.config;
+    });
+    config.pipelines.push(...channelConfig.pipelines);
+  });
 
-  - type: Mixer
-    name: to_2_1_channels
+  return config;
+}
 
-  - type: Filter
-    channel: 0
-    names:
-      - tops_fir
-
-  - type: Filter
-    channel: 1
-    names:
-      - tops_fir
-
-  - type: Filter
-    channel: 2
-    names:
-      - bass_fir
-
-  - type: Mixer
-    name: 3_ch_to_4_ch
-
-  - type: Mixer
-    name: inverter
-
-  - type: Filter
-    channel: 0
-    names:
-      - ch1_delay
-      - tops_limiter
-
-  - type: Filter
-    channel: 1
-    names:
-      - ch2_delay
-      - tops_limiter
-
-  - type: Filter
-    channel: 2
-    names:
-      - ch3_delay
-      - bass_limiter
-
-  - type: Filter
-    channel: 3
-    names:
-      - ch4_delay
-      - bass_limiter
-`;
-  return send({ SetConfig: cfg });
+export function sendConfig(config: Record<string, any>) {
+  send({ SetConfig: JSON.stringify(config) });
 }
 
 export function saveConfig() {

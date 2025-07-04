@@ -17,7 +17,7 @@ import {
   getPyodide,
   minimumPhase,
 } from './fir';
-import { saveConfig, sendConfig } from './config';
+import { buildConfig, saveConfig, sendConfig } from './config';
 
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
@@ -30,9 +30,18 @@ export function App() {
   const ntaps = 4800;
   const fs = 48000;
 
-  const [houseFilters, setHouseFilters] = useLocalStorage("houseFilters", [] as Filter[]);
-  const [bassFilters, setBassFilters] = useLocalStorage("bassFilters", [] as Filter[]);
-  const [topsFilters, setTopsFilters] = useLocalStorage("topsFilters", [] as Filter[]);
+  const [houseFilters, setHouseFilters] = useLocalStorage(
+    'houseFilters',
+    [] as Filter[],
+  );
+  const [bassFilters, setBassFilters] = useLocalStorage(
+    'bassFilters',
+    [] as Filter[],
+  );
+  const [topsFilters, setTopsFilters] = useLocalStorage(
+    'topsFilters',
+    [] as Filter[],
+  );
 
   const [isMinimumPhase, setMinimumPhase] = useState(true);
 
@@ -95,38 +104,61 @@ export function App() {
     ]);
     setComputedFilterTops(topsFilter);
 
-    await sendConfig(
-      {
-        firTaps: topsFilter.taps,
-        limiterDecay: 12,
-        limiterRmsSamples: 256,
-        limiterThreshold: 0,
-      },
-      {
-        firTaps: bassFilter.taps,
-        limiterDecay: 12,
-        limiterRmsSamples: 256,
-        limiterThreshold: 0,
-      },
-      {
-        ch1: 8, // ms
-        ch2: 8, // ms
-        ch3: 0,
-        ch4: 0,
-      },
-       {
-        ch1: false,
-        ch2: false,
-        ch3: false,
-        ch4: true,
-       },
-       {
-        ch1: 6, // db
-        ch2: 6, // db
-        ch3: 0,
-        ch4: 0,
-      },
+    const config = buildConfig(
+      [{ gain: 0 }, { gain: 0 }],
+      [
+        {
+          source: 0,
+          delayInMs: 8,
+          gain: 0,
+          firTaps: topsFilter.taps,
+          inverted: false,
+          limiter: {
+            decay: 12,
+            rmsSamples: 256,
+            threshold: 0,
+          },
+        },
+        {
+          source: 1,
+          delayInMs: 8,
+          gain: 0,
+          firTaps: topsFilter.taps,
+          inverted: false,
+          limiter: {
+            decay: 12,
+            rmsSamples: 256,
+            threshold: 0,
+          },
+        },
+        {
+          source: 0,
+          delayInMs: 0,
+          gain: 0,
+          firTaps: bassFilter.taps,
+          inverted: false,
+          limiter: {
+            decay: 12,
+            rmsSamples: 256,
+            threshold: 0,
+          },
+        },
+        {
+          source: 1,
+          delayInMs: 0,
+          gain: 0,
+          firTaps: bassFilter.taps,
+          inverted: true,
+          limiter: {
+            decay: 12,
+            rmsSamples: 256,
+            threshold: 0,
+          },
+        },
+      ],
     );
+
+    await sendConfig(config);
   };
 
   return (
@@ -167,16 +199,16 @@ export function App() {
             />
           </TabPanel>
           <TabPanel>
-            <ChannelSettings/>
+            <ChannelSettings />
           </TabPanel>
           <TabPanel>
-            <ChannelSettings/>
+            <ChannelSettings />
           </TabPanel>
           <TabPanel>
-            <ChannelSettings/>
+            <ChannelSettings />
           </TabPanel>
           <TabPanel>
-            <ChannelSettings/>
+            <ChannelSettings />
           </TabPanel>
         </Tabs>
       </section>
@@ -190,9 +222,7 @@ export function App() {
           />
           minimum phase
         </label>
-
-        <button onClick={calculate}>apply</button>
-        {' '}
+        <button onClick={calculate}>apply</button>{' '}
         <button onClick={saveConfig}>store config</button>
       </section>
     </main>
