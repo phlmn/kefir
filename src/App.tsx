@@ -17,7 +17,7 @@ import {
   getPyodide,
   minimumPhase,
 } from './fir';
-import { buildConfig, saveConfig, sendConfig } from './config';
+import { buildConfig, saveConfig, sendConfig, ChannelSettings as ChannelSettingsType } from './config';
 
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
@@ -44,6 +44,22 @@ export function App() {
   );
 
   const [isMinimumPhase, setMinimumPhase] = useState(true);
+
+  const [channelSettings, setChannelSettings] = useLocalStorage<ChannelSettingsType[]>(
+    'channelSettings',
+    Array(4).fill(null).map(() => ({
+      delayInMs: 0,
+      source: 0,
+      gain: 0,
+      inverted: false,
+      limiter: {
+        threshold: 0,
+        rmsSamples: 256,
+        decay: 12,
+      },
+      firTaps: [],
+    } as ChannelSettingsType))
+  );
 
   type ComputedFilter = {
     taps: number[];
@@ -104,58 +120,14 @@ export function App() {
     ]);
     setComputedFilterTops(topsFilter);
 
+    const updatedChannelSettings = channelSettings.map((settings, index) => ({
+      ...settings,
+      firTaps: index < 2 ? topsFilter.taps : bassFilter.taps,
+    }));
+
     const config = buildConfig(
       [{ gain: 0 }, { gain: 0 }],
-      [
-        {
-          source: 0,
-          delayInMs: 8,
-          gain: 0,
-          firTaps: topsFilter.taps,
-          inverted: false,
-          limiter: {
-            decay: 12,
-            rmsSamples: 256,
-            threshold: 0,
-          },
-        },
-        {
-          source: 1,
-          delayInMs: 8,
-          gain: 0,
-          firTaps: topsFilter.taps,
-          inverted: false,
-          limiter: {
-            decay: 12,
-            rmsSamples: 256,
-            threshold: 0,
-          },
-        },
-        {
-          source: 0,
-          delayInMs: 0,
-          gain: 0,
-          firTaps: bassFilter.taps,
-          inverted: false,
-          limiter: {
-            decay: 12,
-            rmsSamples: 256,
-            threshold: 0,
-          },
-        },
-        {
-          source: 1,
-          delayInMs: 0,
-          gain: 0,
-          firTaps: bassFilter.taps,
-          inverted: true,
-          limiter: {
-            decay: 12,
-            rmsSamples: 256,
-            threshold: 0,
-          },
-        },
-      ],
+      updatedChannelSettings,
     );
 
     await sendConfig(config);
@@ -199,16 +171,44 @@ export function App() {
             />
           </TabPanel>
           <TabPanel>
-            <ChannelSettings />
+            <ChannelSettings 
+              settings={channelSettings[0]} 
+              onChange={(settings) => {
+                const newChannelSettings = [...channelSettings];
+                newChannelSettings[0] = settings;
+                setChannelSettings(newChannelSettings);
+              }}
+            />
           </TabPanel>
           <TabPanel>
-            <ChannelSettings />
+            <ChannelSettings 
+              settings={channelSettings[1]} 
+              onChange={(settings) => {
+                const newChannelSettings = [...channelSettings];
+                newChannelSettings[1] = settings;
+                setChannelSettings(newChannelSettings);
+              }}
+            />
           </TabPanel>
           <TabPanel>
-            <ChannelSettings />
+            <ChannelSettings 
+              settings={channelSettings[2]} 
+              onChange={(settings) => {
+                const newChannelSettings = [...channelSettings];
+                newChannelSettings[2] = settings;
+                setChannelSettings(newChannelSettings);
+              }}
+            />
           </TabPanel>
           <TabPanel>
-            <ChannelSettings />
+            <ChannelSettings 
+              settings={channelSettings[3]} 
+              onChange={(settings) => {
+                const newChannelSettings = [...channelSettings];
+                newChannelSettings[3] = settings;
+                setChannelSettings(newChannelSettings);
+              }}
+            />
           </TabPanel>
         </Tabs>
       </section>
