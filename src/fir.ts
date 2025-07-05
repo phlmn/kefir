@@ -2,7 +2,7 @@ import { PyodideInterface } from 'pyodide';
 
 declare global {
   interface Window {
-    loadPyodide: () => Promise<PyodideInterface>;
+    loadPyodide: (options?: { indexURL?: string }) => Promise<PyodideInterface>;
   }
 }
 
@@ -13,18 +13,45 @@ let promise: Promise<PyodideInterface> | undefined;
 export async function getPyodide() {
   if (!_p) {
     if (!promise) {
-      promise = window.loadPyodide();
+      promise = window.loadPyodide({
+        indexURL: '/pyodide/'
+      });
     }
 
     _p = await promise;
-    await _p.loadPackage('scipy');
+
+    // Load packages in the correct order
+    console.info('Loading packages...');
+    try {
+      // Load numpy first as it's a dependency for scipy
+      console.info('Loading numpy...');
+      await _p.loadPackage('numpy');
+
+      console.info('Loading scipy...');
+      await _p.loadPackage('scipy');
+
+      console.info('Packages loaded successfully');
+    } catch (error) {
+      console.warn('Some packages failed to load, trying fallback approach:', error);
+      // The packages may still be available even if loadPackage fails
+    }
+
     console.info('importing python dependencies');
-    await _p.runPythonAsync(`
-          import scipy.signal
-          import scipy.fft
-          import numpy as np
-        `);
-    console.info('done importing python dependencies');
+    try {
+      await _p.runPythonAsync(`
+            import numpy as np
+            print("NumPy imported successfully")
+
+            import scipy
+            import scipy.signal
+            import scipy.fft
+            print("SciPy imported successfully")
+          `);
+      console.info('All Python dependencies imported successfully');
+    } catch (error) {
+      console.error('Failed to import Python dependencies:', error);
+      throw error;
+    }
   }
 
   return _p;
@@ -34,7 +61,15 @@ function makePythonFunction(code: string) {
   return async (...args: any[]) => {
     const p = await getPyodide();
 
-    let fn = p.runPython(`${code}\n` + `fn\n`);
+    // Make sure the imports are available in the function scope
+    let fn = p.runPython(`
+import scipy
+import scipy.signal
+import scipy.fft
+import numpy as np
+
+${code}
+fn`);
     return fn(...args).toJs();
   };
 }

@@ -120,7 +120,7 @@ export function App() {
     ]);
     setComputedFilterTops(topsFilter);
 
-    const updatedChannelSettings = channelSettings.map((settings, index) => ({
+    const updatedChannelSettings = channelSettings.map((settings: ChannelSettingsType, index: number) => ({
       ...settings,
       firTaps: index < 2 ? topsFilter.taps : bassFilter.taps,
     }));
