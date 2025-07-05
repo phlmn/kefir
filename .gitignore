@@ -2,3 +2,5 @@ node_modules
 dist
 .idea
 .vercel
+static/pyodide
+static/pyodide-lock.json

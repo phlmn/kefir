@@ -3,9 +3,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run pyodide:fetch && tsc && vite build",
     "preview": "vite preview",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "pyodide:fetch": "node scripts/prepare-pyodide.js"
   },
   "dependencies": {
     "@thi.ng/dsp": "^4.2.24",
