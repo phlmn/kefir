@@ -307,138 +307,6 @@ export function FilterEditor({
               style={{
                 data: {
                   strokeWidth: 2,
-                  stroke: '#aaaaaa',
-                  strokeDasharray: '2,2',
-                },
-              }}
-              data={dbToAxis(computedGain)}
-              interpolation="catmullRom"
-            />
-          )}
-          {computedPhase && (
-            <VictoryLine
-              style={{
-                data: {
-                  strokeWidth: 2,
-                  stroke: '#59f',
-                  strokeDasharray: '2,2',
-                },
-              }}
-              data={degToAxis(computedPhase)}
-              interpolation="catmullRom"
-            />
-          )}
-          {selectedData && (
-            <VictoryArea
-              style={{ data: { fill: '#c43a31', opacity: 0.25 } }}
-              data={dbToAxis(selectedData)}
-              interpolation="catmullRom"
-            />
-          )}
-          <VictoryScatter
-            data={dbToAxis(
-              filterDefs.map((def) => ({
-                x: def.frequency,
-                y: def.gain,
-              })),
-            )}
-            size={(d) => (d.index === selectedPoint ? 6 : 5)}
-            style={{
-              data: {
-                strokeWidth: 3,
-                strokeOpacity: 1.0,
-                stroke: 'white',
-                cursor: 'pointer',
-                fill: (d: any) => (d.index === selectedPoint ? '#c43a31' : '#555'),
-              },
-            }}
-            events={[
-              {
-                target: 'data',
-                eventHandlers: {
-                  onWheel: (event: unknown, targetProps: unknown) => {
-                    const e = event as React.WheelEvent;
-                    e.nativeEvent.preventDefault();
-                    return [
-                      {
-                        target: 'data',
-                        mutation: (props) => {
-                          const newFilterDefs = [...filterDefs];
-                          newFilterDefs[props.index] = {
-                            ...filterDefs[props.index],
-                            q: Math.max(
-                              0.1,
-                              Math.min(
-                                24,
-                                filterDefs[props.index].q +
-                                  (e.deltaY * filterDefs[props.index].q) / 100,
-                              ),
-                            ),
-                          };
-                          setFilterDefs(newFilterDefs);
-                          setSelectedPoint(props.index);
-                        },
-                      },
-                    ];
-                  },
-                  onMouseDown: () => {
-                    return [
-                      {
-                        target: 'data',
-                        mutation: (props) => {
-                          setSelectedPoint(props.index);
-                          setDragging(true);
-                        },
-                      },
-                    ];
-                  },
-                },
-              },
-            ]}
-            domain={{ x: [20, 20000], y: [-1, 1] }}
-          />
-          <VictoryAxis
-            label="Gain (db)"
-            style={{
-              axisLabel: { fontSize: 12, padding: 25 },
-              tickLabels: { fontSize: 12, padding: 5 },
-              ticks: { stroke: 0 },
-              axis: { stroke: 0 },
-            }}
-            dependentAxis
-            tickValues={[-1, -0.5, 0, 0.5, 1]}
-            tickFormat={[-20, -10, 0, 10, 20]}
-          />
-          <VictoryAxis
-            label="Phase (deg)"
-            orientation={'right'}
-            style={{
-              axisLabel: { fontSize: 12, padding: 25 },
-              tickLabels: { fontSize: 12, padding: 5 },
-              ticks: { stroke: 0 },
-              axis: { stroke: 0 },
-            }}
-            dependentAxis
-            tickValues={[-1, -0.5, 0, 0.5, 1]}
-            tickFormat={[-180, -90, 0, 90, 180]}
-          />
-          <VictoryAxis
-            style={{
-              tickLabels: { fontSize: 12, padding: 10 },
-              ticks: { size: 0, strokeWidth: 2, strokeLinecap: 'square' },
-            }}
-            crossAxis
-          />
-          <VictoryLine
-            style={{ data: { strokeWidth: 2, stroke: '#c43a31' } }}
-            data={dbToAxis(masterData)}
-            interpolation="catmullRom"
-          />
-          {computedGain && (
-            <VictoryLine
-              style={{
-                data: {
-                  strokeWidth: 2,
                   stroke: '#fa8690',
                   strokeDasharray: '2,2',
                 },
@@ -527,6 +395,7 @@ export function FilterEditor({
                 },
               },
             ]}
+            domain={{ x: [20, 20000], y: [-1, 1] }}
           />
         </VictoryChart>
       </div>
