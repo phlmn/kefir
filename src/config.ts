@@ -58,7 +58,7 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
       type: 'Limiter',
       parameters: {
         threshold: settings.limiter.threshold,
-        rmsSamples: settings.limiter.rmsSamples,
+        rms_samples: settings.limiter.rmsSamples,
         decay: settings.limiter.decay,
       },
     },
@@ -79,11 +79,14 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
     gain: settings.gain,
     inverted: settings.inverted,
     filters: filters,
-    pipelines: [],
+    pipelines: pipelines,
   };
 }
 
-export function buildConfig(inChannels: InputSettings[], channels: ChannelSettings[]) {
+export function buildConfig(
+  inChannels: InputSettings[],
+  channels: ChannelSettings[],
+) {
   const config = {
     devices: {
       samplerate: 48000,
@@ -92,13 +95,13 @@ export function buildConfig(inChannels: InputSettings[], channels: ChannelSettin
       capture: {
         type: 'Alsa',
         device: 'plughw:CARD=UMC1820',
-        channels: inChannels.length,
+        channels: 2,
         format: 'S24LE',
       },
       playback: {
         type: 'Alsa',
         device: 'plughw:CARD=UMC1820',
-        channels: channels.length,
+        channels: 6,
         format: 'S24LE',
       },
     },
@@ -106,8 +109,8 @@ export function buildConfig(inChannels: InputSettings[], channels: ChannelSettin
     mixers: {
       input_to_channels: {
         channels: {
-          in: inChannels.length,
-          out: channels.length,
+          in: 2,
+          out: 6,
         },
         mapping: channels.map((c, index) => ({
           dest: index,
@@ -117,14 +120,16 @@ export function buildConfig(inChannels: InputSettings[], channels: ChannelSettin
               gain: c.gain,
               inverted: c.inverted,
             },
-          ]
+          ],
         })),
       },
     },
-    pipelines: [{
-      type: 'Mixer',
-      name: 'input_to_channels',
-    }],
+    pipeline: [
+      {
+        type: 'Mixer',
+        name: 'input_to_channels',
+      },
+    ],
   };
 
   channels.forEach((channel, index) => {
@@ -133,7 +138,7 @@ export function buildConfig(inChannels: InputSettings[], channels: ChannelSettin
     channelConfig.filters.forEach((filter) => {
       config.filters[filter.name] = filter.config;
     });
-    config.pipelines.push(...channelConfig.pipelines);
+    config.pipeline.push(...channelConfig.pipelines);
   });
 
   return config;
