@@ -21,6 +21,11 @@ export function amplitudeToDb(amp: number) {
   return Math.log10(amp) * 20;
 }
 
+function roundToDigits(value: number, digits: number) {
+  const factor = Math.pow(10, digits);
+  return Math.round(value * factor) / factor;
+}
+
 const peakFilter = ({
   frequency,
   gain,
@@ -216,8 +221,8 @@ export function FilterEditor({
                     const newFilterDefs = [...filterDefs];
                     newFilterDefs[selectedPoint] = {
                       ...filterDefs[selectedPoint],
-                      frequency: cursorValue.x,
-                      gain: Math.max(-20, Math.min(cursorValue.y * 20, 20)),
+                      frequency: roundToDigits(cursorValue.x, 0),
+                      gain: roundToDigits(Math.max(-20, Math.min(cursorValue.y * 20, 20)), 1),
                     };
                     setFilterDefs(newFilterDefs);
                   }
@@ -242,8 +247,8 @@ export function FilterEditor({
                   const newFilterDefs = [...filterDefs];
                   newFilterDefs.push({
                     type: 'peak',
-                    frequency: cursorValue.x,
-                    gain: Math.max(-20, Math.min(cursorValue.y * 20, 20)),
+                    frequency: roundToDigits(cursorValue.x, 0),
+                    gain: roundToDigits(Math.max(-20, Math.min(cursorValue.y * 20, 20)), 1),
                     q: 3,
                   });
                   setFilterDefs(newFilterDefs);
