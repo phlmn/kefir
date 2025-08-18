@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetchTool(domain:github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm run:*)",
+      "Bash(grep:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}
