@@ -78,7 +78,7 @@ export function App() {
   ): Promise<ComputedFilter> => {
     const frequencies = samplingFrequencies();
     let masterData = freqencyResponse(
-      filters.map((def) => filterFromDef(def)),
+      filters.filter(f => f.enabled).map((def) => filterFromDef(def)),
       frequencies,
     );
     console.log(frequencies, masterData);

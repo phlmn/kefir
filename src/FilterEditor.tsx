@@ -132,6 +132,7 @@ export type Filter = {
   frequency: number;
   gain: number;
   q: number;
+  enabled: boolean;
 };
 
 export function FilterEditor({
@@ -145,7 +146,7 @@ export function FilterEditor({
   computedGain?: Array<{ x: number; y: number }>;
   computedPhase?: Array<{ x: number; y: number }>;
 }) {
-  const filters = filterDefs.map(filterFromDef);
+  const filters = filterDefs.filter(f => f.enabled).map(filterFromDef);
   const frequencies = samplingFrequencies();
   const masterGains = freqencyResponse(filters, frequencies);
   const masterData = zipToXY(frequencies, masterGains);
@@ -155,10 +156,13 @@ export function FilterEditor({
 
   let selectedData;
   if (selectedPoint !== undefined) {
-    selectedData = zipToXY(
-      frequencies,
-      freqencyResponse([filters[selectedPoint]], frequencies),
-    );
+    const selectedFilter = filterFromDef(filterDefs[selectedPoint]);
+    if (selectedFilter) {
+      selectedData = zipToXY(
+        frequencies,
+        freqencyResponse([selectedFilter], frequencies),
+      );
+    }
   }
 
   const dbToAxis = (x: Array<{ x: number; y: number }>) =>
@@ -250,6 +254,7 @@ export function FilterEditor({
                     frequency: roundToDigits(cursorValue.x, 0),
                     gain: roundToDigits(Math.max(-20, Math.min(cursorValue.y * 20, 20)), 1),
                     q: 3,
+                    enabled: true,
                   });
                   setFilterDefs(newFilterDefs);
                   setSelectedPoint(newFilterDefs.length - 1);
@@ -354,7 +359,10 @@ export function FilterEditor({
                 strokeOpacity: 1.0,
                 stroke: 'white',
                 cursor: 'pointer',
-                fill: (d: any) => (d.index === selectedPoint ? '#c43a31' : '#555'),
+                fill: (d: any) => {
+                  return d.index === selectedPoint ? '#c43a31' : '#444';
+                },
+                fillOpacity: (d: any) => filterDefs[d.index]?.enabled ? 1.0 : 0.6,
               },
             }}
             events={[
@@ -407,6 +415,29 @@ export function FilterEditor({
 
       <div className="container">
         <div className="row">
+          <div className="column">
+            <label>Enabled</label>
+            <input
+              type="checkbox"
+              disabled={selectedPoint == undefined}
+              checked={
+                selectedPoint !== undefined
+                  ? filterDefs[selectedPoint].enabled
+                  : false
+              }
+              onChange={(event) => {
+                if (selectedPoint == undefined) {
+                  return;
+                }
+
+                setFilterDefs(
+                  produce(filterDefs, (draft) => {
+                    draft[selectedPoint].enabled = event.currentTarget.checked;
+                  }),
+                );
+              }}
+            />
+          </div>
           <div className="column">
             <label>Type</label>
             <select
