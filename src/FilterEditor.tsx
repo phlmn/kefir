@@ -12,6 +12,8 @@ import {
 import { biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
 import produce from 'immer';
+import { FormField } from './components/FormField';
+import { NumberInput } from './components/NumberInput';
 
 export function dbToAmplitude(db: number) {
   return Math.pow(10, db / 20);
@@ -54,7 +56,7 @@ const highpassFilter = ({
     }
 
     let offset = frequency / f;
-    let value = (Math.log2(offset) * -q) - 6;
+    let value = Math.log2(offset) * -q - 6;
 
     if (value < 0) {
       return Math.min(200, Math.max(-200, value));
@@ -79,7 +81,7 @@ const lowpassFilter = ({
     }
 
     let offset = f / frequency;
-    let value = (Math.log2(offset) * -q) - 6;
+    let value = Math.log2(offset) * -q - 6;
 
     if (value < 0) {
       return Math.min(200, Math.max(-200, value));
@@ -146,7 +148,7 @@ export function FilterEditor({
   computedGain?: Array<{ x: number; y: number }>;
   computedPhase?: Array<{ x: number; y: number }>;
 }) {
-  const filters = filterDefs.filter(f => f.enabled).map(filterFromDef);
+  const filters = filterDefs.filter((f) => f.enabled).map(filterFromDef);
   const frequencies = samplingFrequencies();
   const masterGains = freqencyResponse(filters, frequencies);
   const masterData = zipToXY(frequencies, masterGains);
@@ -226,7 +228,10 @@ export function FilterEditor({
                     newFilterDefs[selectedPoint] = {
                       ...filterDefs[selectedPoint],
                       frequency: roundToDigits(cursorValue.x, 0),
-                      gain: roundToDigits(Math.max(-20, Math.min(cursorValue.y * 20, 20)), 1),
+                      gain: roundToDigits(
+                        Math.max(-20, Math.min(cursorValue.y * 20, 20)),
+                        1,
+                      ),
                     };
                     setFilterDefs(newFilterDefs);
                   }
@@ -252,7 +257,10 @@ export function FilterEditor({
                   newFilterDefs.push({
                     type: 'peak',
                     frequency: roundToDigits(cursorValue.x, 0),
-                    gain: roundToDigits(Math.max(-20, Math.min(cursorValue.y * 20, 20)), 1),
+                    gain: roundToDigits(
+                      Math.max(-20, Math.min(cursorValue.y * 20, 20)),
+                      1,
+                    ),
                     q: 3,
                     enabled: true,
                   });
@@ -362,7 +370,8 @@ export function FilterEditor({
                 fill: (d: any) => {
                   return d.index === selectedPoint ? '#c43a31' : '#444';
                 },
-                fillOpacity: (d: any) => filterDefs[d.index]?.enabled ? 1.0 : 0.6,
+                fillOpacity: (d: any) =>
+                  filterDefs[d.index]?.enabled ? 1.0 : 0.6,
               },
             }}
             events={[
@@ -413,12 +422,12 @@ export function FilterEditor({
         </VictoryChart>
       </div>
 
-      <div className="container">
-        <div className="row">
-          <div className="column">
-            <label>Enabled</label>
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <FormField label="Enabled" className="flex flex-col">
             <input
               type="checkbox"
+              className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
               disabled={selectedPoint == undefined}
               checked={
                 selectedPoint !== undefined
@@ -437,10 +446,10 @@ export function FilterEditor({
                 );
               }}
             />
-          </div>
-          <div className="column">
-            <label>Type</label>
+          </FormField>
+          <FormField label="Type" className="flex flex-col">
             <select
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100"
               disabled={selectedPoint == undefined}
               value={
                 selectedPoint !== undefined
@@ -454,7 +463,8 @@ export function FilterEditor({
 
                 setFilterDefs(
                   produce(filterDefs, (draft) => {
-                    draft[selectedPoint].type = event.currentTarget.value as Filter['type'];
+                    draft[selectedPoint].type = event.currentTarget
+                      .value as Filter['type'];
                   }),
                 );
               }}
@@ -464,11 +474,9 @@ export function FilterEditor({
               <option value="highpass">Highpass</option>
               <option value="lowpass">Lowpass</option>
             </select>
-          </div>
-          <div className="column">
-            <label>Frequency (Hz)</label>
-            <input
-              type="number"
+          </FormField>
+          <FormField label="Frequency (Hz)" className="flex flex-col">
+            <NumberInput
               disabled={
                 selectedPoint == undefined ||
                 filterDefs[selectedPoint].frequency == undefined
@@ -476,27 +484,26 @@ export function FilterEditor({
               value={
                 (selectedPoint !== undefined &&
                   filterDefs[selectedPoint].frequency) ||
-                ''
+                0
               }
-              onChange={(event) => {
+              onChange={(value) => {
                 if (selectedPoint == undefined) {
                   return;
                 }
 
                 setFilterDefs(
                   produce(filterDefs, (draft) => {
-                    draft[selectedPoint].frequency = Number.parseFloat(
-                      event.currentTarget.value,
-                    );
+                    draft[selectedPoint].frequency = value;
                   }),
                 );
               }}
+              parseAs="float"
+              min={1}
+              max={24000}
             />
-          </div>
-          <div className="column">
-            <label>Gain (db)</label>
-            <input
-              type="number"
+          </FormField>
+          <FormField label="Gain (db)" className="flex flex-col">
+            <NumberInput
               disabled={
                 selectedPoint == undefined ||
                 filterDefs[selectedPoint].gain == undefined
@@ -504,50 +511,52 @@ export function FilterEditor({
               value={
                 (selectedPoint !== undefined &&
                   filterDefs[selectedPoint].gain) ||
-                ''
+                0
               }
-              onChange={(event) => {
+              onChange={(value) => {
                 if (selectedPoint == undefined) {
                   return;
                 }
 
                 setFilterDefs(
                   produce(filterDefs, (draft) => {
-                    draft[selectedPoint].gain = Number.parseFloat(
-                      event.currentTarget.value,
-                    );
+                    draft[selectedPoint].gain = value;
                   }),
                 );
               }}
+              step={0.1}
+              parseAs="float"
+              min={-20}
+              max={20}
             />
-          </div>
-          <div className="column">
-            <label>Q</label>
-            <input
-              type="number"
+          </FormField>
+          <FormField label="Q" className="flex flex-col">
+            <NumberInput
               disabled={
                 selectedPoint == undefined ||
                 filterDefs[selectedPoint].q == undefined
               }
               value={
                 (selectedPoint !== undefined && filterDefs[selectedPoint].q) ||
-                ''
+                0
               }
-              onChange={(event) => {
+              onChange={(value) => {
                 if (selectedPoint == undefined) {
                   return;
                 }
 
                 setFilterDefs(
                   produce(filterDefs, (draft) => {
-                    draft[selectedPoint].q = Number.parseFloat(
-                      event.currentTarget.value,
-                    );
+                    draft[selectedPoint].q = value;
                   }),
                 );
               }}
+              step={0.1}
+              parseAs="float"
+              min={0.1}
+              max={24}
             />
-          </div>
+          </FormField>
         </div>
       </div>
     </div>

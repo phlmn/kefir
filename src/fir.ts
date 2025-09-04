@@ -14,7 +14,7 @@ export async function getPyodide() {
   if (!_p) {
     if (!promise) {
       promise = window.loadPyodide({
-        indexURL: '/pyodide/'
+        indexURL: '/pyodide/',
       });
     }
 
@@ -32,7 +32,10 @@ export async function getPyodide() {
 
       console.info('Packages loaded successfully');
     } catch (error) {
-      console.warn('Some packages failed to load, trying fallback approach:', error);
+      console.warn(
+        'Some packages failed to load, trying fallback approach:',
+        error,
+      );
       // The packages may still be available even if loadPackage fails
     }
 
