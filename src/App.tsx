@@ -25,7 +25,7 @@ import {
 } from './config';
 
 import { useLocalStorage } from './useLocalStorage';
-import { ChannelSettings } from './ChannelSettings';
+import { Routing } from './components/Routing';
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from './components/Tabs';
 import { Button, PopoverButton } from './components/Button';
 import { Radio, RulerDimensionLine, Save } from 'lucide-react';
@@ -33,6 +33,8 @@ import { Popover, PopoverPanel } from '@headlessui/react';
 import { Switch } from './components/Switch';
 import { ws } from './ws';
 import { cn } from './components/utils';
+import { OutputsTab } from './OutputsTab';
+import { Card } from './components/Card';
 
 getPyodide();
 
@@ -55,7 +57,7 @@ export function App() {
 
   const [bypassHouseCurve, setBypassHouseCurve] = useLocalStorage(
     'bypassHouseCurve',
-    false
+    false,
   );
 
   const [isMinimumPhase, setMinimumPhase] = useState(true);
@@ -73,28 +75,110 @@ export function App() {
     };
   }, []);
 
-  const [channelSettings, setChannelSettings] = useLocalStorage<
+  // Helper function to create default channel settings
+  const createDefaultChannelSettings = (
+    channelIndex?: number,
+  ): ChannelSettingsType => ({
+    name:
+      channelIndex !== undefined
+        ? `Channel ${channelIndex + 1}`
+        : 'Unnamed Channel',
+    delayInMs: 0,
+    sources: [], // Start with no inputs connected (inactive)
+    inverted: false,
+    limiter: {
+      enabled: true,
+      threshold: 0,
+      rmsSamples: 256,
+      decay: 12,
+    },
+    firTaps: [],
+  });
+
+  // Helper function to migrate channel settings from old format and expand to 10 channels
+  const migrateChannelSettings = (existing: any[]): ChannelSettingsType[] => {
+    if (!existing)
+      return Array(10)
+        .fill(null)
+        .map((_, index) => createDefaultChannelSettings(index));
+
+    const migrated = existing.map((channel: any, index: number) => {
+      let migratedChannel = { ...channel };
+
+      // Add name if it doesn't exist
+      if (!('name' in migratedChannel)) {
+        migratedChannel.name = `Channel ${index + 1}`;
+      }
+
+      // Convert old single-source format to new multi-source format
+      if ('source' in channel && !('sources' in channel)) {
+        migratedChannel = {
+          ...migratedChannel,
+          sources: [
+            {
+              channel: channel.source,
+              gain: channel.gain || 0,
+            },
+          ],
+          inverted: channel.inverted || false,
+          // Remove old properties
+          source: undefined,
+          gain: undefined,
+        };
+      }
+
+      // Convert per-source inversion to per-channel inversion
+      if ('sources' in migratedChannel && migratedChannel.sources) {
+        const hasAnyInvertedSources = migratedChannel.sources.some(
+          (s: any) => s.inverted,
+        );
+        migratedChannel = {
+          ...migratedChannel,
+          sources: migratedChannel.sources.map((s: any) => ({
+            channel: s.channel,
+            gain: s.gain,
+            // Remove per-source inverted property
+          })),
+          inverted:
+            migratedChannel.inverted !== undefined
+              ? migratedChannel.inverted
+              : hasAnyInvertedSources,
+        };
+      }
+
+      return migratedChannel;
+    });
+
+    // Fill missing channels with default settings
+    while (migrated.length < 10) {
+      migrated.push(createDefaultChannelSettings(migrated.length));
+    }
+
+    return migrated;
+  };
+
+  const [channelSettingsRaw, setChannelSettingsRaw] = useLocalStorage<
     ChannelSettingsType[]
   >(
     'channelSettings',
-    Array(4)
+    Array(10)
       .fill(null)
-      .map(
-        () =>
-          ({
-            delayInMs: 0,
-            source: 0,
-            gain: 0,
-            inverted: false,
-            limiter: {
-              threshold: 0,
-              rmsSamples: 256,
-              decay: 12,
-            },
-            firTaps: [],
-          } as ChannelSettingsType),
-      ),
+      .map(() => createDefaultChannelSettings()),
   );
+
+  // Apply migration logic
+  const channelSettings = migrateChannelSettings(channelSettingsRaw);
+
+  // Update localStorage if migration occurred
+  useEffect(() => {
+    if (channelSettingsRaw.length !== 10) {
+      setChannelSettingsRaw(channelSettings);
+    }
+  }, [channelSettings, channelSettingsRaw, setChannelSettingsRaw]);
+
+  const setChannelSettings = (newSettings: ChannelSettingsType[]) => {
+    setChannelSettingsRaw(newSettings);
+  };
 
   type ComputedFilter = {
     taps: number[];
@@ -158,12 +242,12 @@ export function App() {
     const updatedChannelSettings = channelSettings.map(
       (settings: ChannelSettingsType, index: number) => ({
         ...settings,
-        firTaps: index < 2 ? topsFilter.taps : bassFilter.taps,
+        firTaps: index < 2 ? topsFilter.taps : index < 4 ? bassFilter.taps : [],
       }),
     );
 
     const config = buildConfig(
-      [{ gain: 0 }, { gain: 0 }],
+      Array(8).fill({ gain: 0 }),
       updatedChannelSettings,
     );
 
@@ -172,10 +256,15 @@ export function App() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <div className="border-b-1 border-gray-300 h-15 mb-5 flex items-center px-4">
+      <div className="border-b-1 border-gray-300 h-15 mb-5 flex items-center px-4 bg-white">
         <div className="font-bold text-xl">keFIR</div>
         <div className="ml-4 bg-gray-800 text-white rounded text-xs px-2 py-0.5 inline-flex items-center">
-          <div className={cn("ml-0.5 mr-1.5 w-2 h-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500")}></div>
+          <div
+            className={cn(
+              'ml-0.5 mr-1.5 w-2 h-2 rounded-full',
+              isConnected ? 'bg-green-500' : 'bg-red-500',
+            )}
+          ></div>
           {isConnected ? 'Connected' : 'Disconnected'}
         </div>
         <div className="ml-auto space-x-2">
@@ -221,72 +310,48 @@ export function App() {
             <Tab>House Curve</Tab>
             <Tab>Bass</Tab>
             <Tab>Tops</Tab>
-            <Tab>Channel 1</Tab>
-            <Tab>Channel 2</Tab>
-            <Tab>Channel 3</Tab>
-            <Tab>Channel 4</Tab>
+            <Tab>Outputs</Tab>
+            <Tab>Routing</Tab>
           </TabList>
           <TabPanels>
-            <TabPanel className="p-6">
-              <FilterEditor
-                filterDefs={houseFilters}
-                setFilterDefs={setHouseFilters}
+            <TabPanel>
+              <Card>
+                <FilterEditor
+                  filterDefs={houseFilters}
+                  setFilterDefs={setHouseFilters}
+                />
+              </Card>
+            </TabPanel>
+            <TabPanel>
+              <Card>
+                <FilterEditor
+                  filterDefs={bassFilters}
+                  setFilterDefs={setBassFilters}
+                  computedGain={computedFilterBass?.gain}
+                  computedPhase={computedFilterBass?.phase}
+                />
+              </Card>
+            </TabPanel>
+            <TabPanel>
+              <Card>
+                <FilterEditor
+                  filterDefs={topsFilters}
+                  setFilterDefs={setTopsFilters}
+                  computedGain={computedFilterTops?.gain}
+                  computedPhase={computedFilterTops?.phase}
+                />
+              </Card>
+            </TabPanel>
+            <TabPanel>
+              <OutputsTab
+                channelSettings={channelSettings}
+                setChannelSettings={setChannelSettings}
               />
             </TabPanel>
-            <TabPanel className="p-6">
-              <FilterEditor
-                filterDefs={bassFilters}
-                setFilterDefs={setBassFilters}
-                computedGain={computedFilterBass?.gain}
-                computedPhase={computedFilterBass?.phase}
-              />
-            </TabPanel>
-            <TabPanel className="p-6">
-              <FilterEditor
-                filterDefs={topsFilters}
-                setFilterDefs={setTopsFilters}
-                computedGain={computedFilterTops?.gain}
-                computedPhase={computedFilterTops?.phase}
-              />
-            </TabPanel>
-            <TabPanel className="p-6">
-              <ChannelSettings
-                settings={channelSettings[0]}
-                onChange={(settings) => {
-                  const newChannelSettings = [...channelSettings];
-                  newChannelSettings[0] = settings;
-                  setChannelSettings(newChannelSettings);
-                }}
-              />
-            </TabPanel>
-            <TabPanel className="p-6">
-              <ChannelSettings
-                settings={channelSettings[1]}
-                onChange={(settings) => {
-                  const newChannelSettings = [...channelSettings];
-                  newChannelSettings[1] = settings;
-                  setChannelSettings(newChannelSettings);
-                }}
-              />
-            </TabPanel>
-            <TabPanel className="p-6">
-              <ChannelSettings
-                settings={channelSettings[2]}
-                onChange={(settings) => {
-                  const newChannelSettings = [...channelSettings];
-                  newChannelSettings[2] = settings;
-                  setChannelSettings(newChannelSettings);
-                }}
-              />
-            </TabPanel>
-            <TabPanel className="p-6">
-              <ChannelSettings
-                settings={channelSettings[3]}
-                onChange={(settings) => {
-                  const newChannelSettings = [...channelSettings];
-                  newChannelSettings[3] = settings;
-                  setChannelSettings(newChannelSettings);
-                }}
+            <TabPanel>
+              <Routing
+                channelSettings={channelSettings}
+                onChannelSettingsChange={setChannelSettings}
               />
             </TabPanel>
           </TabPanels>

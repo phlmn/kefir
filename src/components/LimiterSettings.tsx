@@ -2,6 +2,7 @@ import React from 'react';
 import { FormField } from './FormField';
 import { NumberInput } from './NumberInput';
 import { ChannelSettings as ChannelSettingsType } from '../config';
+import { Switch } from './Switch';
 
 export interface LimiterSettingsProps {
   /**
@@ -27,6 +28,10 @@ export function LimiterSettings({
 }: LimiterSettingsProps) {
   return (
     <div className={`space-y-4 ${className}`}>
+      <label>
+        <Switch checked={settings.enabled} onCheckedChange={(checked) => onChange({ enabled: checked })} />{' '}
+        Enabled
+      </label>
       <FormField label="Limiter Threshold (db)">
         <NumberInput
           value={settings.threshold}

@@ -1,21 +1,10 @@
-import React, {
-  ComponentRef,
-  forwardRef,
-  ForwardRefRenderFunction,
-} from 'react';
 import * as headless from '@headlessui/react';
-import { PropsOf } from '@headlessui/react/dist/types';
-
-const fr = <T extends React.ElementType>(
-  fn: ForwardRefRenderFunction<ComponentRef<T>, PropsOf<T>>,
-) => {
-  return forwardRef<ComponentRef<T>, PropsOf<T>>(fn);
-};
+import { fr } from './utils';
 
 export const Tab = fr<typeof headless.Tab>((props, ref) => (
   <headless.Tab
     {...props}
-    className={'data-selected:bg-white data-hover:bg-white/35 py-1 px-3 grow rounded-xl'}
+    className={'data-selected:bg-white data-hover:bg-white/50 py-1 px-3 grow rounded-xl'}
     ref={ref}
   >
     {props.children}
@@ -25,7 +14,7 @@ export const Tab = fr<typeof headless.Tab>((props, ref) => (
 export const TabList = fr<typeof headless.TabList>((props, ref) => (
   <headless.TabList
     {...props}
-    className={'bg-gray-200 p-1 gap-1 rounded-xl flex'}
+    className={'bg-gray-200/70 p-1 gap-1 rounded-xl flex mb-6'}
     ref={ref}
   >
     {props.children}

@@ -4,6 +4,7 @@ import { CheckboxLabel } from './components/Label';
 import { FormField } from './components/FormField';
 import { NumberInput } from './components/NumberInput';
 import { LimiterSettings } from './components/LimiterSettings';
+import { Card } from './components/Card';
 
 interface ChannelSettingsProps {
   settings: ChannelSettingsType;
@@ -23,40 +24,30 @@ export function ChannelSettings({ settings, onChange }: ChannelSettingsProps) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <Card>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Basic Settings */}
+        {/* Input Sources Info */}
         <div className="space-y-4">
-          <FormField label="Source">
-            <NumberInput
-              value={settings.source}
-              onChange={(value) => updateSettings({ source: value })}
-              parseAs="int"
-              min={0}
-            />
-          </FormField>
-
-          <FormField label="Gain (db)">
-            <NumberInput
-              value={settings.gain}
-              onChange={(value) => updateSettings({ gain: value })}
-              step={0.1}
-              parseAs="float"
-            />
-          </FormField>
-
-          <CheckboxLabel
-            input={
-              <input
-                type="checkbox"
-                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                checked={settings.inverted}
-                onChange={(e) => updateSettings({ inverted: e.target.checked })}
-              />
-            }
-          >
-            Invert Polarity
-          </CheckboxLabel>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 mb-2">{settings.name}</h4>
+            {settings.sources && settings.sources.length > 0 ? (
+              <div className="space-y-2">
+                {settings.sources.map((source, index) => (
+                  <div key={index} className="text-sm text-blue-800">
+                    Input {source.channel + 1}: {source.gain.toFixed(1)} dB
+                  </div>
+                ))}
+                {settings.inverted && (
+                  <div className="text-sm text-orange-700 font-medium">Channel Inverted</div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-blue-700">No inputs connected</div>
+            )}
+            <div className="text-xs text-blue-600 mt-2">
+              Use the Routing tab to configure input sources
+            </div>
+          </div>
         </div>
 
         {/* Delay Settings */}
@@ -78,6 +69,6 @@ export function ChannelSettings({ settings, onChange }: ChannelSettingsProps) {
         {/* Additional space for future settings */}
         <div>{/* Reserved for future settings */}</div>
       </div>
-    </div>
+    </Card>
   );
 }

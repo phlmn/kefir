@@ -8,11 +8,15 @@ export type SpeakerParams = {
 };
 
 export type ChannelSettings = {
+  name: string;
   delayInMs: number;
-  source: number;
-  gain: number;
+  sources: {
+    channel: number;
+    gain: number;
+  }[];
   inverted: boolean;
   limiter: {
+    enabled: boolean;
     threshold: number;
     rmsSamples: number;
     decay: number;
@@ -41,28 +45,32 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
     },
   });
 
-  filters.push({
-    name: filterName('fir'),
-    config: {
-      type: 'Conv',
-      parameters: {
-        values: settings.firTaps,
-        type: 'Values',
+  if (settings.firTaps.length > 0) {
+    filters.push({
+      name: filterName('fir'),
+      config: {
+        type: 'Conv',
+        parameters: {
+          values: settings.firTaps,
+          type: 'Values',
+        },
       },
-    },
-  });
+    });
+  }
 
-  filters.push({
-    name: filterName('limiter'),
-    config: {
-      type: 'Limiter',
-      parameters: {
-        threshold: settings.limiter.threshold,
-        rms_samples: settings.limiter.rmsSamples,
-        decay: settings.limiter.decay,
+  if (settings.limiter.enabled) {
+    filters.push({
+      name: filterName('limiter'),
+      config: {
+        type: 'Limiter',
+        parameters: {
+          threshold: settings.limiter.threshold,
+          rms_samples: settings.limiter.rmsSamples,
+          decay: settings.limiter.decay,
+        },
       },
-    },
-  });
+    });
+  }
 
   // Pipelines
   const pipelines = [];
@@ -95,13 +103,13 @@ export function buildConfig(
       capture: {
         type: 'Alsa',
         device: 'plughw:CARD=UMC1820',
-        channels: 2,
+        channels: 8,
         format: 'S24LE',
       },
       playback: {
         type: 'Alsa',
         device: 'plughw:CARD=UMC1820',
-        channels: 6,
+        channels: 10,
         format: 'S24LE',
       },
     },
@@ -109,18 +117,15 @@ export function buildConfig(
     mixers: {
       input_to_channels: {
         channels: {
-          in: 2,
-          out: 6,
+          in: 8,
+          out: 10,
         },
         mapping: channels.map((c, index) => ({
           dest: index,
-          sources: [
-            {
-              channel: c.source,
-              gain: c.gain,
-              inverted: c.inverted,
-            },
-          ],
+          sources: c.sources.map((source) => ({
+            ...source,
+            inverted: c.inverted, // Apply channel-level inversion to all sources
+          })),
         })),
       },
     },
@@ -133,18 +138,22 @@ export function buildConfig(
   };
 
   channels.forEach((channel, index) => {
-    const channelConfig = createChannelConfig(index, channel);
+    // Only include channels that have sources (implicit activation)
+    if (channel.sources && channel.sources.length > 0) {
+      const channelConfig = createChannelConfig(index, channel);
 
-    channelConfig.filters.forEach((filter) => {
-      config.filters[filter.name] = filter.config;
-    });
-    config.pipeline.push(...channelConfig.pipelines);
+      channelConfig.filters.forEach((filter) => {
+        config.filters[filter.name] = filter.config;
+      });
+      config.pipeline.push(...channelConfig.pipelines);
+    }
   });
 
   return config;
 }
 
 export function sendConfig(config: Record<string, any>) {
+  console.log(config);
   send({ SetConfig: JSON.stringify(config) });
 }
 
