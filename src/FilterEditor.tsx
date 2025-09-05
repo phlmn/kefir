@@ -200,7 +200,6 @@ export function FilterEditor({
         tabIndex={0}
       >
         <VictoryChart
-          style={{ parent: { maxWidth: '1200px' } }}
           theme={VictoryTheme.material}
           scale={{ x: 'log', y: 'linear' }}
           width={1200}
@@ -559,27 +558,6 @@ export function FilterEditor({
           </FormField>
         </div>
       </div>
-    </div>
-  );
-}
-
-export function FilterPreview({ taps }: { taps: number[] }) {
-  return (
-    <div>
-      <textarea value={taps.join('\n')}></textarea>
-      <VictoryChart
-        theme={VictoryTheme.material}
-        style={{ parent: { maxWidth: '1200px' } }}
-        width={1200}
-        height={500}
-      >
-        <VictoryLine
-          style={{
-            data: { stroke: '#c43a31', strokeWidth: 1 },
-          }}
-          data={[...taps].map((y, i) => ({ x: i / 48, y }))}
-        />
-      </VictoryChart>
     </div>
   );
 }

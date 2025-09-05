@@ -9,23 +9,24 @@
     "pyodide:fetch": "node scripts/prepare-pyodide.js"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.7",
     "@thi.ng/dsp": "^4.2.24",
+    "class-variance-authority": "^0.7.1",
     "immer": "^9.0.16",
-    "prettier": "^2.7.1",
+    "lucide-react": "^0.542.0",
     "pyodide": "0.21.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-tabs": "^6.0.0",
     "reconnecting-websocket": "^4.4.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.13",
     "victory": "36.6.8"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.13",
+    "@tailwindcss/vite": "^4.1.13",
     "@types/react-dom": "18.0.6",
     "@vitejs/plugin-react": "4.3.4",
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.13",
+    "prettier": "^2.7.1",
     "typescript": "^5.7.3",
     "vite": "6.1.1"
   },

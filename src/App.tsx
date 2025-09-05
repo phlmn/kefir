@@ -24,10 +24,12 @@ import {
   ChannelSettings as ChannelSettingsType,
 } from './config';
 
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import { useLocalStorage } from './useLocalStorage';
 import { ChannelSettings } from './ChannelSettings';
 import { CheckboxLabel } from './components/Label';
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from './components/Tabs';
+import { Button } from './components/Button';
+import { Save } from 'lucide-react';
 
 getPyodide();
 
@@ -148,135 +150,101 @@ export function App() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8">
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Frequency Response Editor
-        </h1>
-        <Tabs className="bg-white rounded-lg shadow">
-          <TabList className="border-b border-gray-200 px-6">
-            <Tab className="py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer focus:outline-none focus:text-gray-700 focus:border-gray-300 data-[selected]:text-blue-600 data-[selected]:border-blue-600">
-              House Curve
-            </Tab>
-            <Tab className="py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer focus:outline-none focus:text-gray-700 focus:border-gray-300 data-[selected]:text-blue-600 data-[selected]:border-blue-600">
-              Bass
-            </Tab>
-            <Tab className="py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer focus:outline-none focus:text-gray-700 focus:border-gray-300 data-[selected]:text-blue-600 data-[selected]:border-blue-600">
-              Tops
-            </Tab>
-            <Tab className="py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer focus:outline-none focus:text-gray-700 focus:border-gray-300 data-[selected]:text-blue-600 data-[selected]:border-blue-600">
-              Channel 1
-            </Tab>
-            <Tab className="py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer focus:outline-none focus:text-gray-700 focus:border-gray-300 data-[selected]:text-blue-600 data-[selected]:border-blue-600">
-              Channel 2
-            </Tab>
-            <Tab className="py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer focus:outline-none focus:text-gray-700 focus:border-gray-300 data-[selected]:text-blue-600 data-[selected]:border-blue-600">
-              Channel 3
-            </Tab>
-            <Tab className="py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer focus:outline-none focus:text-gray-700 focus:border-gray-300 data-[selected]:text-blue-600 data-[selected]:border-blue-600">
-              Channel 4
-            </Tab>
-          </TabList>
-
-          <TabPanel className="p-6">
-            <FilterEditor
-              filterDefs={houseFilters}
-              setFilterDefs={setHouseFilters}
-            />
-          </TabPanel>
-          <TabPanel className="p-6">
-            <FilterEditor
-              filterDefs={bassFilters}
-              setFilterDefs={setBassFilters}
-              computedGain={computedFilterBass?.gain}
-              computedPhase={computedFilterBass?.phase}
-            />
-          </TabPanel>
-          <TabPanel className="p-6">
-            <FilterEditor
-              filterDefs={topsFilters}
-              setFilterDefs={setTopsFilters}
-              computedGain={computedFilterTops?.gain}
-              computedPhase={computedFilterTops?.phase}
-            />
-          </TabPanel>
-          <TabPanel className="p-6">
-            <ChannelSettings
-              settings={channelSettings[0]}
-              onChange={(settings) => {
-                const newChannelSettings = [...channelSettings];
-                newChannelSettings[0] = settings;
-                setChannelSettings(newChannelSettings);
-              }}
-            />
-          </TabPanel>
-          <TabPanel className="p-6">
-            <ChannelSettings
-              settings={channelSettings[1]}
-              onChange={(settings) => {
-                const newChannelSettings = [...channelSettings];
-                newChannelSettings[1] = settings;
-                setChannelSettings(newChannelSettings);
-              }}
-            />
-          </TabPanel>
-          <TabPanel className="p-6">
-            <ChannelSettings
-              settings={channelSettings[2]}
-              onChange={(settings) => {
-                const newChannelSettings = [...channelSettings];
-                newChannelSettings[2] = settings;
-                setChannelSettings(newChannelSettings);
-              }}
-            />
-          </TabPanel>
-          <TabPanel className="p-6">
-            <ChannelSettings
-              settings={channelSettings[3]}
-              onChange={(settings) => {
-                const newChannelSettings = [...channelSettings];
-                newChannelSettings[3] = settings;
-                setChannelSettings(newChannelSettings);
-              }}
-            />
-          </TabPanel>
-        </Tabs>
-      </section>
-
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <CheckboxLabel
-            className="mb-6"
-            input={
-              <input
-                type="checkbox"
-                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                checked={isMinimumPhase}
-                onChange={(e) => setMinimumPhase(!isMinimumPhase)}
-              />
-            }
-          >
-            Minimum phase
-          </CheckboxLabel>
-          <div className="space-x-4">
-            <button
-              onClick={calculate}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Apply
-            </button>
-            <button
-              onClick={saveConfig}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-            >
-              Store Config
-            </button>
-          </div>
+    <main className="min-h-screen bg-gray-50">
+      <div className="border-b-1 border-gray-300 h-15 mb-5 flex items-center px-4">
+        <div className="font-bold text-xl">keFIR</div>
+        <div className="ml-auto space-x-4">
+          <Button size="sm" onClick={calculate}>
+            <Save className="h-4 w-4 mr-2" />
+            Apply
+          </Button>
+          <Button variant={'secondary'} size="sm" onClick={saveConfig}>
+            <Save className="h-4 w-4 mr-2" />
+            Store Config
+          </Button>
         </div>
+      </div>
+      <section className="px-4">
+        <TabGroup>
+          <TabList>
+            <Tab>House Curve</Tab>
+            <Tab>Bass</Tab>
+            <Tab>Tops</Tab>
+            <Tab>Channel 1</Tab>
+            <Tab>Channel 2</Tab>
+            <Tab>Channel 3</Tab>
+            <Tab>Channel 4</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel className="p-6">
+              <FilterEditor
+                filterDefs={houseFilters}
+                setFilterDefs={setHouseFilters}
+              />
+            </TabPanel>
+            <TabPanel className="p-6">
+              <FilterEditor
+                filterDefs={bassFilters}
+                setFilterDefs={setBassFilters}
+                computedGain={computedFilterBass?.gain}
+                computedPhase={computedFilterBass?.phase}
+              />
+            </TabPanel>
+            <TabPanel className="p-6">
+              <FilterEditor
+                filterDefs={topsFilters}
+                setFilterDefs={setTopsFilters}
+                computedGain={computedFilterTops?.gain}
+                computedPhase={computedFilterTops?.phase}
+              />
+            </TabPanel>
+            <TabPanel className="p-6">
+              <ChannelSettings
+                settings={channelSettings[0]}
+                onChange={(settings) => {
+                  const newChannelSettings = [...channelSettings];
+                  newChannelSettings[0] = settings;
+                  setChannelSettings(newChannelSettings);
+                }}
+              />
+            </TabPanel>
+            <TabPanel className="p-6">
+              <ChannelSettings
+                settings={channelSettings[1]}
+                onChange={(settings) => {
+                  const newChannelSettings = [...channelSettings];
+                  newChannelSettings[1] = settings;
+                  setChannelSettings(newChannelSettings);
+                }}
+              />
+            </TabPanel>
+            <TabPanel className="p-6">
+              <ChannelSettings
+                settings={channelSettings[2]}
+                onChange={(settings) => {
+                  const newChannelSettings = [...channelSettings];
+                  newChannelSettings[2] = settings;
+                  setChannelSettings(newChannelSettings);
+                }}
+              />
+            </TabPanel>
+            <TabPanel className="p-6">
+              <ChannelSettings
+                settings={channelSettings[3]}
+                onChange={(settings) => {
+                  const newChannelSettings = [...channelSettings];
+                  newChannelSettings[3] = settings;
+                  setChannelSettings(newChannelSettings);
+                }}
+              />
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
       </section>
     </main>
   );
 }
+
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,

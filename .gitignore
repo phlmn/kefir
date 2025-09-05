@@ -4,3 +4,4 @@ dist
 .vercel
 static/pyodide
 static/pyodide-lock.json
+.claude
