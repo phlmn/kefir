@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom/client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   amplitudeToDb,
   dbToAmplitude,
@@ -31,6 +31,8 @@ import { Button, PopoverButton } from './components/Button';
 import { Radio, RulerDimensionLine, Save } from 'lucide-react';
 import { Popover, PopoverPanel } from '@headlessui/react';
 import { Switch } from './components/Switch';
+import { ws } from './ws';
+import { cn } from './components/utils';
 
 getPyodide();
 
@@ -51,9 +53,25 @@ export function App() {
     [] as Filter[],
   );
 
-  const [bypassHouseCurve, setBypassHouseCurve] = useState(false);
+  const [bypassHouseCurve, setBypassHouseCurve] = useLocalStorage(
+    'bypassHouseCurve',
+    false
+  );
 
   const [isMinimumPhase, setMinimumPhase] = useState(true);
+
+  const [isConnected, setIsConnected] = useState(false);
+  useEffect(() => {
+    const onOpen = () => setIsConnected(true);
+    const onClose = () => setIsConnected(false);
+
+    ws.addEventListener('open', onOpen);
+    ws.addEventListener('close', onClose);
+    return () => {
+      ws.removeEventListener('open', onOpen);
+      ws.removeEventListener('close', onClose);
+    };
+  }, []);
 
   const [channelSettings, setChannelSettings] = useLocalStorage<
     ChannelSettingsType[]
@@ -156,8 +174,12 @@ export function App() {
     <main className="min-h-screen bg-gray-50">
       <div className="border-b-1 border-gray-300 h-15 mb-5 flex items-center px-4">
         <div className="font-bold text-xl">keFIR</div>
+        <div className="ml-4 bg-gray-800 text-white rounded text-xs px-2 py-0.5 inline-flex items-center">
+          <div className={cn("ml-0.5 mr-1.5 w-2 h-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500")}></div>
+          {isConnected ? 'Connected' : 'Disconnected'}
+        </div>
         <div className="ml-auto space-x-2">
-          <Popover className="inline-flex mr-6">
+          <Popover className="inline-flex mr-4">
             <PopoverButton
               size="sm"
               variant="secondary"

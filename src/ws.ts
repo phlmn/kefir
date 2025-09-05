@@ -1,7 +1,7 @@
 import ReconnectingWebSocket from 'reconnecting-websocket';
 
 const timeout = 10000;
-const ws = new ReconnectingWebSocket('ws://dsp.local:1234', [], {
+export const ws = new ReconnectingWebSocket('ws://dsp.local:1234', [], {
   connectionTimeout: timeout,
 });
 const response_handlers: Record<string, (message: { data: string }) => void> =
