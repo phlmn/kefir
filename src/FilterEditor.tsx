@@ -14,6 +14,7 @@ import { filterResponse } from '@thi.ng/dsp/filter-response';
 import produce from 'immer';
 import { FormField } from './components/FormField';
 import { NumberInput } from './components/NumberInput';
+import { DbGainInput } from './components/DbGainInput';
 
 export function dbToAmplitude(db: number) {
   return Math.pow(10, db / 20);
@@ -502,16 +503,7 @@ export function FilterEditor({
             />
           </FormField>
           <FormField label="Gain (db)" className="flex flex-col">
-            <NumberInput
-              disabled={
-                selectedPoint == undefined ||
-                filterDefs[selectedPoint].gain == undefined
-              }
-              value={
-                (selectedPoint !== undefined &&
-                  filterDefs[selectedPoint].gain) ||
-                0
-              }
+            <DbGainInput
               onChange={(value) => {
                 if (selectedPoint == undefined) {
                   return;
@@ -523,10 +515,15 @@ export function FilterEditor({
                   }),
                 );
               }}
-              step={0.1}
-              parseAs="float"
-              min={-20}
-              max={20}
+              value={
+                (selectedPoint !== undefined &&
+                  filterDefs[selectedPoint].gain) ||
+                0
+              }
+              disabled={
+                selectedPoint == undefined ||
+                filterDefs[selectedPoint].gain == undefined
+              }
             />
           </FormField>
           <FormField label="Q" className="flex flex-col">

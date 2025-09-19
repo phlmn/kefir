@@ -1,6 +1,7 @@
 import { ChannelSettings as ChannelSettingsType } from '../config';
 import { Switch } from './Switch';
-import { NumberInput } from './NumberInput';
+import { DbGainInput } from './DbGainInput';
+import { RoundCheckbox } from './RoundCheckbox';
 import { Card } from './Card';
 
 interface RoutingProps {
@@ -123,7 +124,7 @@ function RoutingMatrix({
                   In{i + 1}
                 </th>
               ))}
-              <th className="text-left p-1 text-xs font-medium text-gray-700 min-w-[200px]">
+              <th className="text-left p-1 text-xs font-medium text-gray-700 min-w-[190px]">
                 Source Controls
               </th>
               <th className="text-center p-1 text-xs font-medium text-gray-700 min-w-[60px]">
@@ -157,14 +158,14 @@ function RoutingMatrix({
                   <td className="p-1 font-medium text-gray-900 text-sm text-center">
                     {channelIndex + 1}
                   </td>
-                  <td className="p-1">
+                  <td className="p-2">
                     <input
                       type="text"
                       value={settings.name}
                       onChange={(e) =>
                         updateChannelName(channelIndex, e.target.value)
                       }
-                      className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-2.5 py-1 text-sm border border-gray-300 hover:border-gray-400 rounded focus:bg-white focus:ring-blue-500 focus:border-blue-500"
                       placeholder={`Channel ${channelIndex + 1}`}
                     />
                   </td>
@@ -174,9 +175,7 @@ function RoutingMatrix({
                     );
                     return (
                       <td key={inputIndex} className="p-1 text-center">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        <RoundCheckbox
                           checked={isConnected}
                           onChange={() =>
                             toggleChannelSource(channelIndex, inputIndex)
@@ -195,10 +194,10 @@ function RoutingMatrix({
                           key={sourceIndex}
                           className="flex items-center gap-1 text-xs"
                         >
-                          <span className="w-8 text-gray-600">
+                          <span className="w-8 text-gray-600 flex-shrink-0">
                             In{source.channel + 1}:
                           </span>
-                          <NumberInput
+                          <DbGainInput
                             value={source.gain}
                             onChange={(value) =>
                               updateSourceGain(
@@ -207,12 +206,11 @@ function RoutingMatrix({
                                 value,
                               )
                             }
-                            step={0.1}
-                            parseAs="float"
-                            className="w-12 text-xs"
-                            title={`Gain for Input ${source.channel + 1}`}
+                            min={-60}
+                            max={40}
+                            className="w-full"
+                            withSlider
                           />
-                          <span className="text-xs text-gray-500">dB</span>
                         </div>
                       ))}
                       {settings.sources.length === 0 && (
