@@ -5,13 +5,19 @@ import { FormField } from './components/FormField';
 import { NumberInput } from './components/NumberInput';
 import { LimiterSettings } from './components/LimiterSettings';
 import { Card } from './components/Card';
+import { Modal } from './components/Modal';
 
 interface ChannelSettingsProps {
   settings: ChannelSettingsType;
   onChange: (settings: ChannelSettingsType) => void;
+  onClose: () => void;
 }
 
-export function ChannelSettings({ settings, onChange }: ChannelSettingsProps) {
+export function ChannelSettings({
+  settings,
+  onChange,
+  onClose,
+}: ChannelSettingsProps) {
   const updateSettings = (updates: Partial<ChannelSettingsType>) => {
     onChange({ ...settings, ...updates });
   };
@@ -24,8 +30,8 @@ export function ChannelSettings({ settings, onChange }: ChannelSettingsProps) {
   };
 
   return (
-    <Card>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <Modal onClose={onClose} open={true}>
+      <div className="flex gap-8">
         {/* Input Sources Info */}
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -38,7 +44,9 @@ export function ChannelSettings({ settings, onChange }: ChannelSettingsProps) {
                   </div>
                 ))}
                 {settings.inverted && (
-                  <div className="text-sm text-orange-700 font-medium">Channel Inverted</div>
+                  <div className="text-sm text-orange-700 font-medium">
+                    Channel Inverted
+                  </div>
                 )}
               </div>
             ) : (
@@ -69,6 +77,6 @@ export function ChannelSettings({ settings, onChange }: ChannelSettingsProps) {
         {/* Additional space for future settings */}
         <div>{/* Reserved for future settings */}</div>
       </div>
-    </Card>
+    </Modal>
   );
 }

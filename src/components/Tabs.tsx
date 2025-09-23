@@ -4,7 +4,9 @@ import { fr } from './utils';
 export const Tab = fr<typeof headless.Tab>((props, ref) => (
   <headless.Tab
     {...props}
-    className={'data-selected:bg-white data-hover:bg-white/50 py-1 px-3 grow rounded-xl'}
+    className={
+      'data-selected:bg-white data-hover:bg-white/50 py-1 px-3 grow rounded-xl'
+    }
     ref={ref}
   >
     {props.children}

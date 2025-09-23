@@ -31,10 +31,11 @@ import { Button, PopoverButton } from './components/Button';
 import { Radio, RulerDimensionLine, Save } from 'lucide-react';
 import { Popover, PopoverPanel } from '@headlessui/react';
 import { Switch } from './components/Switch';
-import { ws } from './ws';
+import { send, ws } from './ws';
 import { cn } from './components/utils';
 import { OutputsTab } from './OutputsTab';
 import { Card } from './components/Card';
+import { InputsTab } from './InputsTab';
 
 getPyodide();
 
@@ -60,6 +61,12 @@ export function App() {
     false,
   );
 
+  const [playbackSignalsRms, setPlaybackSignalsRms] = useState<number[]>([]);
+  const [playbackSignalsPeak, setPlaybackSignalsPeak] = useState<number[]>([]);
+
+  const [captureSignalsRms, setCaptureSignalsRms] = useState<number[]>([]);
+  const [captureSignalsPeak, setCaptureSignalsPeak] = useState<number[]>([]);
+
   const [isMinimumPhase, setMinimumPhase] = useState(true);
 
   const [isConnected, setIsConnected] = useState(false);
@@ -74,6 +81,28 @@ export function App() {
       ws.removeEventListener('close', onClose);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const interval = setInterval(async () => {
+      const rmsRes = await send('GetPlaybackSignalRms');
+      setPlaybackSignalsRms(rmsRes);
+
+      const peakRes = await send('GetPlaybackSignalPeak');
+      setPlaybackSignalsPeak(peakRes);
+
+      const captureRmsRes = await send('GetCaptureSignalRms');
+      setCaptureSignalsRms(captureRmsRes);
+
+      const capturePeakRes = await send('GetCaptureSignalPeak');
+      setCaptureSignalsPeak(capturePeakRes);
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isConnected]);
 
   // Helper function to create default channel settings
   const createDefaultChannelSettings = (
@@ -310,6 +339,7 @@ export function App() {
             <Tab>House Curve</Tab>
             <Tab>Bass</Tab>
             <Tab>Tops</Tab>
+            <Tab>Inputs</Tab>
             <Tab>Outputs</Tab>
             <Tab>Routing</Tab>
           </TabList>
@@ -343,9 +373,17 @@ export function App() {
               </Card>
             </TabPanel>
             <TabPanel>
+              <InputsTab
+                captureSignalsRms={captureSignalsRms}
+                captureSignalsPeak={captureSignalsPeak}
+              />
+            </TabPanel>
+            <TabPanel>
               <OutputsTab
                 channelSettings={channelSettings}
                 setChannelSettings={setChannelSettings}
+                playbackSignalsRms={playbackSignalsRms}
+                playbackSignalsPeak={playbackSignalsPeak}
               />
             </TabPanel>
             <TabPanel>

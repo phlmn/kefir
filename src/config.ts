@@ -83,8 +83,6 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
   });
 
   return {
-    source: settings.source,
-    gain: settings.gain,
     inverted: settings.inverted,
     filters: filters,
     pipelines: pipelines,

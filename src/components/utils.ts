@@ -1,7 +1,12 @@
-import { PropsOf } from "@headlessui/react/dist/types";
-import { clsx, type ClassValue } from "clsx";
-import { ComponentRef, forwardRef, ForwardRefRenderFunction, PropsWithChildren } from "react";
-import { twMerge } from "tailwind-merge";
+import { PropsOf } from '@headlessui/react/dist/types';
+import { clsx, type ClassValue } from 'clsx';
+import {
+  ComponentRef,
+  forwardRef,
+  ForwardRefRenderFunction,
+  PropsWithChildren,
+} from 'react';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

@@ -7,7 +7,6 @@ export const ws = new ReconnectingWebSocket('ws://dsp.local:1234', [], {
 const response_handlers: Record<string, (message: { data: string }) => void> =
   {};
 ws.onmessage = (message: any) => {
-  console.info(message);
   Object.values(response_handlers)[0](message);
 };
 

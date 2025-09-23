@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check } from 'lucide-react';
 
 export interface RoundCheckboxProps {
   checked: boolean;
@@ -24,9 +24,10 @@ export function RoundCheckbox({
       className={`
         w-5 h-5 rounded-full border transition-all duration-150 ease-in-out
         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
-        ${checked 
-          ? 'bg-gray-600 border-gray-600' 
-          : 'bg-white border-gray-300 hover:border-gray-400'
+        ${
+          checked
+            ? 'bg-gray-600 border-gray-600'
+            : 'bg-white border-gray-300 hover:border-gray-400'
         }
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         ${className}

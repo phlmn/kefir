@@ -29,7 +29,10 @@ export function LimiterSettings({
   return (
     <div className={`space-y-4 ${className}`}>
       <label>
-        <Switch checked={settings.enabled} onCheckedChange={(checked) => onChange({ enabled: checked })} />{' '}
+        <Switch
+          checked={settings.enabled}
+          onCheckedChange={(checked) => onChange({ enabled: checked })}
+        />{' '}
         Enabled
       </label>
       <FormField label="Limiter Threshold (db)">
