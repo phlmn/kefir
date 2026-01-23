@@ -36,6 +36,7 @@ import { cn } from './components/utils';
 import { OutputsTab } from './OutputsTab';
 import { Card } from './components/Card';
 import { InputsTab } from './InputsTab';
+import { SpeakersTab } from './SpeakersTab';
 
 getPyodide();
 
@@ -340,6 +341,7 @@ export function App() {
             <Tab>Bass</Tab>
             <Tab>Tops</Tab>
             <Tab>Inputs</Tab>
+            <Tab>Speakers</Tab>
             <Tab>Outputs</Tab>
             <Tab>Routing</Tab>
           </TabList>
@@ -374,6 +376,12 @@ export function App() {
             </TabPanel>
             <TabPanel>
               <InputsTab
+                captureSignalsRms={captureSignalsRms}
+                captureSignalsPeak={captureSignalsPeak}
+              />
+            </TabPanel>
+            <TabPanel>
+              <SpeakersTab
                 captureSignalsRms={captureSignalsRms}
                 captureSignalsPeak={captureSignalsPeak}
               />
