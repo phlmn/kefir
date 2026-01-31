@@ -156,5 +156,5 @@ export function sendConfig(config: Record<string, any>) {
 }
 
 export function saveConfig() {
-  return send({ WriteConfigFile: 'camillaconfig-full.yaml' });
+  return send({ WriteConfigFile: '/media/mmcblk0p2/camillaconfig-full.yaml' });
 }
