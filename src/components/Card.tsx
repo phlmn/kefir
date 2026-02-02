@@ -1,4 +1,4 @@
-import { cn, fr } from './utils';
+import { cn, fr } from '@/lib/utils';
 
 export const Card = fr<'div'>((props, ref) => (
   <div

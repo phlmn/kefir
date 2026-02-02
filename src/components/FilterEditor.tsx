@@ -12,9 +12,9 @@ import {
 import { biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
 import produce from 'immer';
-import { FormField } from './components/FormField';
-import { NumberInput } from './components/NumberInput';
-import { DbGainInput } from './components/DbGainInput';
+import { FormField } from './FormField';
+import { NumberInput } from './NumberInput';
+import { DbGainInput } from './DbGainInput';
 
 export function dbToAmplitude(db: number) {
   return Math.pow(10, db / 20);

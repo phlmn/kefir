@@ -1,14 +1,11 @@
-import { cn } from './components/utils';
-import { Card } from './components/Card';
-import { DbMeter } from './components/DbMeter';
+import { Card } from "@/components/Card";
+import { DbMeter } from "@/components/DbMeter";
+import { cn } from "@/lib/utils";
+import { useGlobalState } from "@/state";
 
-export function InputsTab({
-  captureSignalsRms,
-  captureSignalsPeak,
-}: {
-  captureSignalsRms: number[];
-  captureSignalsPeak: number[];
-}) {
+export function InputsPage() {
+  const { captureSignalsPeak, captureSignalsRms } = useGlobalState();
+
   return (
     <>
       <ChannelsStatus

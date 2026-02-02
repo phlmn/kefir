@@ -1,5 +1,5 @@
 import * as headless from '@headlessui/react';
-import { fr } from './utils';
+import { fr } from '@/lib/utils';
 
 export const Tab = fr<typeof headless.Tab>((props, ref) => (
   <headless.Tab

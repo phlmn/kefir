@@ -1,21 +1,19 @@
-import { ChannelSettings } from './ChannelSettings';
-import { cn } from './components/utils';
-import { ChannelSettings as ChannelSettingsType } from './config';
 import { useState } from 'react';
-import { Card } from './components/Card';
-import { DbMeter } from './components/DbMeter';
 
-export function OutputsTab({
-  channelSettings,
-  setChannelSettings,
-  playbackSignalsRms,
-  playbackSignalsPeak,
-}: {
-  channelSettings: ChannelSettingsType[];
-  setChannelSettings: (settings: ChannelSettingsType[]) => void;
-  playbackSignalsRms: number[];
-  playbackSignalsPeak: number[];
-}) {
+import { ChannelSettings } from '@/ChannelSettings';
+import { cn } from '@/lib/utils';
+import { ChannelSettings as ChannelSettingsType } from '@/config';
+import { Card } from '@/components/Card';
+import { DbMeter } from '@/components/DbMeter';
+import { useGlobalState } from '@/state';
+
+export function OutputsPage() {
+  const {
+    channelSettings,
+    setChannelSettings,
+    playbackSignalsRms,
+    playbackSignalsPeak,
+  } = useGlobalState();
   const [editChannel, setEditChannel] = useState<number | null>(null);
 
   return (

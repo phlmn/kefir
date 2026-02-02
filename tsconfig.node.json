@@ -1,5 +1,9 @@
 {
     "compilerOptions": {
+      "baseUrl": ".",
+      "paths": {
+        "@/*": ["./src/*"]
+      },
       "composite": true,
       "module": "ESNext",
       "moduleResolution": "Node",
@@ -7,4 +11,3 @@
     },
     "include": ["vite.config.ts"]
   }
-  
