@@ -6,10 +6,10 @@ import { Root } from './Root';
 import { BassSettingsPage } from './pages/BassSettingsPage';
 import { TopsSettingsPage } from './pages/TopsSettingsPage';
 import { InputsPage } from './pages/InputsPage';
-import { OutputsPage } from './pages/OutputsPage';
 import { RoutingPage } from './pages/RoutingPage';
 import { HouseCurvePage } from './pages/HouseCurvePage';
 import { GlobalStateProvider } from './state';
+import { HomePage } from './pages/HomePage';
 
 // preload pyodide
 getPyodide();
@@ -21,7 +21,7 @@ let router = createBrowserRouter([
     children: [
       {
         index: true,
-        Component: HouseCurvePage,
+        Component: HomePage,
       },
       {
         path: '/bass',
@@ -34,10 +34,6 @@ let router = createBrowserRouter([
       {
         path: '/inputs',
         Component: InputsPage,
-      },
-      {
-        path: '/outputs',
-        Component: OutputsPage,
       },
       {
         path: '/routing',

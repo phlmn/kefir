@@ -29,16 +29,16 @@ export function DbMeter({ value }: { value: number }) {
 
   return (
     <div>
-      <div className="w-3 h-full rounded-full relative overflow-hidden border-2 border-gray-200">
+      <div className="w-2 h-full rounded-full relative overflow-hidden border border-neutral-700">
         <div className="w-full h-full absolute" style={{ background: meterBg }}>
           <div
-            className="w-full top-0 bg-gray-200 absolute"
+            className="w-full top-0 bg-neutral-700 absolute"
             style={{
               transition: '.1s all',
               height: `${(dbToMeter(value) * 100).toFixed(2)}%`,
             }}
           ></div>
-          <div className="h-[1px] w-full top-[12.5%] bg-gray-400 absolute"></div>
+          <div className="h-px w-full top-[12.5%] bg-neutral-500 absolute"></div>
         </div>
       </div>
     </div>

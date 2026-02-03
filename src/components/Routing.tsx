@@ -1,8 +1,8 @@
 import { ChannelSettings as ChannelSettingsType } from '../config';
-import { Switch } from './Switch';
 import { DbGainInput } from './DbGainInput';
 import { RoundCheckbox } from './RoundCheckbox';
-import { Card } from './Card';
+import { Card } from './ui/card';
+import { Switch } from './ui/switch';
 
 interface RoutingProps {
   channelSettings: ChannelSettingsType[];

@@ -33,7 +33,7 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center mx-2 my-1 gap-5">
+        <div className="flex items-center mx-2 my-1 justify-between">
           <div className="font-bold text-xl">keFIR</div>
           <div className="bg-gray-800 text-white rounded text-xs px-2 py-0.5 inline-flex items-center">
             <div

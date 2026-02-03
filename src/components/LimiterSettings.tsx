@@ -1,8 +1,7 @@
-import React from 'react';
 import { FormField } from './FormField';
 import { NumberInput } from './NumberInput';
 import { ChannelSettings as ChannelSettingsType } from '../config';
-import { Switch } from './Switch';
+import { Switch } from '@/components/ui/switch';
 
 export interface LimiterSettingsProps {
   /**

@@ -1,5 +1,6 @@
-import { Card } from "@/components/Card";
+
 import { DbMeter } from "@/components/DbMeter";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useGlobalState } from "@/state";
 

@@ -1,10 +1,7 @@
-import React from 'react';
 import { ChannelSettings as ChannelSettingsType } from './config';
-import { CheckboxLabel } from './components/Label';
 import { FormField } from './components/FormField';
 import { NumberInput } from './components/NumberInput';
 import { LimiterSettings } from './components/LimiterSettings';
-import { Card } from './components/Card';
 import { Modal } from './components/Modal';
 
 interface ChannelSettingsProps {

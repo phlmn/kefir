@@ -1,9 +1,8 @@
-import './index.css';
-
-import { saveConfig } from './config';
-
 import { Radio, RulerDimensionLine, Save } from 'lucide-react';
-import { Switch } from './components/Switch';
+import { Outlet } from 'react-router';
+
+import './index.css';
+import { saveConfig } from './config';
 import Layout from './Layout';
 import { SidebarTrigger } from './components/ui/sidebar';
 import { Button } from './components/ui/button';
@@ -13,8 +12,9 @@ import {
   PopoverTrigger,
 } from './components/ui/popover';
 import { cn } from './lib/utils';
-import { Outlet } from 'react-router';
 import { useGlobalState } from './state';
+import { Switch } from './components/ui/switch';
+import { Label } from './components/ui/label';
 
 export function Root() {
   const { isConnected, calculate, bypassHouseCurve, setBypassHouseCurve } =
@@ -46,13 +46,13 @@ export function Root() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent>
-                <label className="flex items-center py-2 gap-3">
+                <Label className="flex items-center py-2 gap-3">
                   <Switch
                     checked={bypassHouseCurve}
                     onCheckedChange={setBypassHouseCurve}
                   />{' '}
                   Bypass House Curve
-                </label>
+                </Label>
               </PopoverContent>
             </Popover>
             <Button variant="secondary" size="sm" onClick={saveConfig}>

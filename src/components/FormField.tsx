@@ -1,5 +1,5 @@
 import React from 'react';
-import { Label } from './Label';
+import { Label } from './ui/label';
 
 export interface FormFieldProps {
   /**
@@ -56,7 +56,7 @@ export function FormField({
 
   return (
     <div className={className}>
-      <Label htmlFor={fieldId} required={required}>
+      <Label htmlFor={fieldId}>
         {label}
       </Label>
       {childWithId}
