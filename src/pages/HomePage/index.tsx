@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChannelsStatus } from './OutputsPanel';
 import { useGlobalState } from '@/state';
 import { InputsStatus } from './InputsStatus';
+import { useNavigate } from 'react-router';
 
 export function HomePage() {
   return (
@@ -16,6 +17,8 @@ function OutputsCard() {
   const { channelSettings, playbackSignalsRms, playbackSignalsPeak } =
     useGlobalState();
 
+  const navigate = useNavigate();
+
   return (
     <Card className='mb-5'>
       <CardHeader>
@@ -26,7 +29,9 @@ function OutputsCard() {
           channelSettings={channelSettings}
           playbackSignalsPeak={playbackSignalsPeak}
           playbackSignalsRms={playbackSignalsRms}
-          onChannelClick={() => {}}
+          onChannelClick={(index) => {
+            navigate(`/outputs/${index + 1}`);
+          }}
         />
       </CardContent>
     </Card>

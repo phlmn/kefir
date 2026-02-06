@@ -1,4 +1,5 @@
 import React from 'react';
+import { Input } from './ui/input';
 
 export interface NumberInputProps
   extends Omit<
@@ -39,10 +40,6 @@ export function NumberInput({
   className = '',
   ...props
 }: NumberInputProps) {
-  const baseClasses =
-    'block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100';
-  const combinedClasses = [baseClasses, className].filter(Boolean).join(' ');
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     if (inputValue === '') {
@@ -57,11 +54,11 @@ export function NumberInput({
   };
 
   return (
-    <input
+    <Input
       type="number"
       value={value}
       onChange={handleChange}
-      className={combinedClasses}
+      className={className}
       {...props}
     />
   );

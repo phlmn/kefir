@@ -10,6 +10,7 @@ import { RoutingPage } from './pages/RoutingPage';
 import { HouseCurvePage } from './pages/HouseCurvePage';
 import { GlobalStateProvider } from './state';
 import { HomePage } from './pages/HomePage';
+import { OutputChannelPage } from './pages/OutputChannelPage';
 
 // preload pyodide
 getPyodide();
@@ -34,6 +35,10 @@ let router = createBrowserRouter([
       {
         path: '/inputs',
         Component: InputsPage,
+      },
+      {
+        path: '/outputs/:channel',
+        Component: OutputChannelPage,
       },
       {
         path: '/routing',

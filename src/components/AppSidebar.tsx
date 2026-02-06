@@ -28,8 +28,13 @@ import {
   CollapsibleTrigger,
 } from './ui/collapsible';
 import { cn } from '@/lib/utils';
+import { useGlobalState } from '@/state';
+import { useNavigate } from 'react-router';
 
 export function AppSidebar({ isConnected }: { isConnected: boolean }) {
+  const { channelSettings } = useGlobalState();
+  const navigate = useNavigate();
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -81,44 +86,13 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
                   label: 'Outputs',
                   icon: SpeakerIcon,
                 }}
-                subItems={[
-                  {
-                    label: '1 – Top L',
-                  },
-                  {
-                    label: '2 – Top R',
-                  },
-                  {
-                    label: '3 – Sub 1',
-                  },
-                  {
-                    label: '4 – Sub 2',
-                  },
-                  {
-                    label: '5 – Unnamed',
-                    disabled: true,
-                  },
-                  {
-                    label: '6 – Unnamed',
-                    disabled: true,
-                  },
-                  {
-                    label: '7 – Unnamed',
-                    disabled: true,
-                  },
-                  {
-                    label: '8 – Unnamed',
-                    disabled: true,
-                  },
-                  {
-                    label: '9 – Unnamed',
-                    disabled: true,
-                  },
-                  {
-                    label: '10 – Unnamed',
-                    disabled: true,
-                  },
-                ]}
+                subItems={channelSettings.map((channel, index) => ({
+                  label: `${index + 1} – ${channel.name}`,
+                  disabled: channel.sources.length === 0,
+                  onClick: () => {
+                    navigate(`/outputs/${index + 1}`);
+                  }
+                }))}
               />
               <CollapsibleMenuItem
                 item={{
@@ -170,6 +144,7 @@ type Item = {
 type SubItem = {
   label: string;
   disabled?: boolean;
+  onClick?: () => void;
 };
 
 function CollapsibleMenuItem({
@@ -197,6 +172,7 @@ function CollapsibleMenuItem({
                   className={
                     subItem.disabled ? 'text-sidebar-foreground/60' : ''
                   }
+                  onClick={subItem.onClick}
                 >
                   {subItem.label}
                 </SidebarMenuSubButton>
