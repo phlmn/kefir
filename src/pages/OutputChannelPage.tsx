@@ -1,17 +1,30 @@
+import { FilterEditor, Filter } from '@/components/FilterEditor';
 import { NumberInput } from '@/components/NumberInput';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ChannelSettings } from '@/config';
 import { useGlobalState } from '@/state';
+import { useState } from 'react';
 import { useParams } from 'react-router';
 
 export function OutputChannelPage() {
   const params = useParams();
   const channel = parseInt(params.channel || '1') - 1;
   const { channelSettings, setChannelSettings } = useGlobalState();
+  const [filterDefs, setFiltersDefs] = useState<Filter[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState<number | null>(null);
 
   const settings = channelSettings[channel];
 
@@ -55,13 +68,25 @@ export function OutputChannelPage() {
       </div>
 
       <Card>
+        <CardHeader>Equalizer</CardHeader>
+        <CardContent>
+          <FilterEditor
+            filterDefs={filterDefs}
+            setFilterDefs={setFiltersDefs}
+            selectedPoint={selectedFilter}
+            onSelectedPointChange={setSelectedFilter}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader>Lowpass</CardHeader>
         <CardContent>
           <Field>
             <FieldLabel>Type</FieldLabel>
             <Select
-              // value={settings.lowpass.type}
-              // onChange={(value) => onChange({ lowpass: { ...settings.lowpass, type: value } })}
+            // value={settings.lowpass.type}
+            // onChange={(value) => onChange({ lowpass: { ...settings.lowpass, type: value } })}
             >
               <SelectTrigger>
                 <SelectValue>LR4</SelectValue>
@@ -69,21 +94,45 @@ export function OutputChannelPage() {
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Linkwitz–Riley</SelectLabel>
-                  <SelectItem className='pl-6' value="lr2"><b>LR2</b> (12 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="lr4"><b>LR4</b> (24 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="lr6"><b>LR6</b> (36 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="lr8"><b>LR8</b> (48 dB/oct)</SelectItem>2
+                  <SelectItem className="pl-6" value="lr2">
+                    <b>LR2</b> (12 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="lr4">
+                    <b>LR4</b> (24 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="lr6">
+                    <b>LR6</b> (36 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="lr8">
+                    <b>LR8</b> (48 dB/oct)
+                  </SelectItem>
                 </SelectGroup>
                 <SelectGroup>
                   <SelectLabel>Butterworth</SelectLabel>
-                  <SelectItem className='pl-6' value="b1"><b>B1</b> (6 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="b2"><b>B2</b> (12 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="b3"><b>B3</b> (18 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="b4"><b>B4</b> (24 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="b5"><b>B5</b> (30 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="b6"><b>B6</b> (36 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="b7"><b>B7</b> (42 dB/oct)</SelectItem>
-                  <SelectItem className='pl-6' value="b8"><b>B8</b> (48 dB/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="b1">
+                    <b>B1</b> (6 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="b2">
+                    <b>B2</b> (12 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="b3">
+                    <b>B3</b> (18 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="b4">
+                    <b>B4</b> (24 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="b5">
+                    <b>B5</b> (30 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="b6">
+                    <b>B6</b> (36 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="b7">
+                    <b>B7</b> (42 dB/oct)
+                  </SelectItem>
+                  <SelectItem className="pl-6" value="b8">
+                    <b>B8</b> (48 dB/oct)
+                  </SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -98,7 +147,6 @@ export function OutputChannelPage() {
               step={1}
             />
           </Field>
-
         </CardContent>
       </Card>
       <GeneralSettings settings={settings} onChange={updateSettings} />

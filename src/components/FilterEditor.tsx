@@ -8,6 +8,7 @@ import {
   VictoryScatter,
   VictoryTheme,
   Selection,
+  VictoryContainer,
 } from 'victory';
 import { biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
@@ -15,6 +16,16 @@ import produce from 'immer';
 import { FormField } from './FormField';
 import { NumberInput } from './NumberInput';
 import { DbGainInput } from './DbGainInput';
+import { Field, FieldContent, FieldLabel } from './ui/field';
+import { Switch } from './ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import useResizeObserver from 'use-resize-observer';
 
 export function dbToAmplitude(db: number) {
   return Math.pow(10, db / 20);
@@ -143,22 +154,25 @@ export function FilterEditor({
   setFilterDefs,
   computedGain,
   computedPhase,
+  selectedPoint,
+  onSelectedPointChange,
 }: {
   filterDefs: Filter[];
   setFilterDefs: (newFilterDefs: Filter[]) => void;
   computedGain?: Array<{ x: number; y: number }>;
   computedPhase?: Array<{ x: number; y: number }>;
+  selectedPoint: number | null;
+  onSelectedPointChange: (point: number | null) => void;
 }) {
   const filters = filterDefs.filter((f) => f.enabled).map(filterFromDef);
   const frequencies = samplingFrequencies();
   const masterGains = freqencyResponse(filters, frequencies);
   const masterData = zipToXY(frequencies, masterGains);
 
-  const [selectedPoint, setSelectedPoint] = useState<number | undefined>();
   const [dragging, setDragging] = useState(false);
 
   let selectedData;
-  if (selectedPoint !== undefined) {
+  if (selectedPoint != null) {
     const selectedFilter = filterFromDef(filterDefs[selectedPoint]);
     if (selectedFilter) {
       selectedData = zipToXY(
@@ -174,15 +188,20 @@ export function FilterEditor({
     x.map((x) => ({ ...x, y: x.y / 180 }));
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const { width, height } = useResizeObserver<HTMLDivElement>({
+    ref: containerRef as React.RefObject<HTMLDivElement>,
+  });
+
   return (
     <div>
       <div
         style={{
           outline: 'none',
+          height: '320px',
         }}
         ref={containerRef}
         onKeyDown={(e) => {
-          if (selectedPoint === undefined) return;
+          if (selectedPoint == null) return;
           if (e.key === 'Delete' || e.key === 'Backspace') {
             const newFilterDefs = filterDefs.filter(
               (_, i) => i !== selectedPoint,
@@ -190,9 +209,9 @@ export function FilterEditor({
 
             let newPoint = Math.max(0, selectedPoint - 1);
             if (newFilterDefs.length > 0) {
-              setSelectedPoint(newPoint);
+              onSelectedPointChange(newPoint);
             } else {
-              setSelectedPoint(undefined);
+              onSelectedPointChange(null);
             }
 
             setFilterDefs(newFilterDefs);
@@ -201,9 +220,31 @@ export function FilterEditor({
         tabIndex={0}
       >
         <VictoryChart
-          theme={VictoryTheme.material}
+          theme={{
+            ...VictoryTheme.material,
+            axis: {
+              ...VictoryTheme.material.axis,
+              style: {
+                ...VictoryTheme.material.axis?.style,
+                ticks: { stroke: 0 },
+                axis: { stroke: 0 },
+                tickLabels: {
+                  fill: 'var(--foreground)',
+                  fontFamily: 'inherit',
+                  fontSize: 12,
+                  padding: 5
+                },
+                axisLabel: { fontSize: 12, padding: 25, fill: 'var(--foreground)', fontFamily: 'inherit' },
+                grid: {
+                  stroke: 'var(--color-neutral-600)',
+                  strokeDasharray: '2, 2',
+                },
+              },
+            },
+          }}
           scale={{ x: 'log', y: 'linear' }}
-          width={1200}
+          width={width}
+          height={height}
           events={[
             {
               target: 'parent',
@@ -238,34 +279,40 @@ export function FilterEditor({
                 },
                 onClick: (event: SyntheticEvent, targetProps) => {
                   const e = event as React.MouseEvent;
-                  if (e.detail != 2) return;
-                  const parentSVG =
-                    targetProps.parentSVG || Selection.getParentSVG(e);
-                  const cursorSVGPosition = Selection.getSVGEventCoordinates(
-                    e,
-                    parentSVG,
-                  );
-                  let cursorValue: SVGCoordinateType | null =
-                    Selection.getDataCoordinates(
-                      targetProps,
-                      targetProps.scale,
-                      cursorSVGPosition.x,
-                      cursorSVGPosition.y,
+                  console.log(e);
+                  if (e.detail == 1) { // left click
+                    if (selectedPoint != undefined) {
+                      onSelectedPointChange(null);
+                    }
+                  } else if (e.detail == 2) { // double click
+                    const parentSVG =
+                      targetProps.parentSVG || Selection.getParentSVG(e);
+                    const cursorSVGPosition = Selection.getSVGEventCoordinates(
+                      e,
+                      parentSVG,
                     );
+                    let cursorValue: SVGCoordinateType | null =
+                      Selection.getDataCoordinates(
+                        targetProps,
+                        targetProps.scale,
+                        cursorSVGPosition.x,
+                        cursorSVGPosition.y,
+                      );
 
-                  const newFilterDefs = [...filterDefs];
-                  newFilterDefs.push({
-                    type: 'peak',
-                    frequency: roundToDigits(cursorValue.x, 0),
-                    gain: roundToDigits(
-                      Math.max(-20, Math.min(cursorValue.y * 20, 20)),
-                      1,
-                    ),
-                    q: 3,
-                    enabled: true,
-                  });
-                  setFilterDefs(newFilterDefs);
-                  setSelectedPoint(newFilterDefs.length - 1);
+                    const newFilterDefs = [...filterDefs];
+                    newFilterDefs.push({
+                      type: 'peak',
+                      frequency: roundToDigits(cursorValue.x, 0),
+                      gain: roundToDigits(
+                        Math.max(-20, Math.min(cursorValue.y * 20, 20)),
+                        1,
+                      ),
+                      q: 3,
+                      enabled: true,
+                    });
+                    setFilterDefs(newFilterDefs);
+                      onSelectedPointChange(newFilterDefs.length - 1);
+                  }
                 },
                 onMouseUp: () => {
                   return [
@@ -314,9 +361,14 @@ export function FilterEditor({
               ticks: { size: 0, strokeWidth: 2, strokeLinecap: 'square' },
             }}
             crossAxis
+            tickValues={[
+              20, 20, 50, 100, 200, 300, 500, 1000, 2000, 3000, 5000, 10000,
+              20000,
+            ]}
+            tickFormat={(val) => (val >= 1000 ? `${val / 1000}k` : val)}
           />
           <VictoryLine
-            style={{ data: { strokeWidth: 2, stroke: '#c43a31' } }}
+            style={{ data: { strokeWidth: 2, stroke: 'var(--color-red-500)' } }}
             data={dbToAxis(masterData)}
             interpolation="catmullRom"
           />
@@ -348,7 +400,7 @@ export function FilterEditor({
           )}
           {selectedData && (
             <VictoryArea
-              style={{ data: { fill: '#c43a31', opacity: 0.25 } }}
+              style={{ data: { fill: '#c43a31', opacity: 0.3 } }}
               data={dbToAxis(selectedData)}
               interpolation="catmullRom"
             />
@@ -398,7 +450,7 @@ export function FilterEditor({
                             ),
                           };
                           setFilterDefs(newFilterDefs);
-                          setSelectedPoint(props.index);
+                          onSelectedPointChange(props.index);
                         },
                       },
                     ];
@@ -408,7 +460,7 @@ export function FilterEditor({
                       {
                         target: 'data',
                         mutation: (props) => {
-                          setSelectedPoint(props.index);
+                          onSelectedPointChange(props.index);
                           setDragging(true);
                         },
                       },
@@ -424,65 +476,77 @@ export function FilterEditor({
 
       <div className="max-w-6xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <FormField label="Enabled" className="flex flex-col">
-            <input
-              type="checkbox"
-              className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
-              disabled={selectedPoint == undefined}
-              checked={
-                selectedPoint !== undefined
-                  ? filterDefs[selectedPoint].enabled
-                  : false
-              }
-              onChange={(event) => {
-                if (selectedPoint == undefined) {
-                  return;
+          <Field className="flex flex-col">
+            <FieldLabel>Enabled</FieldLabel>
+            <FieldContent>
+              <Switch
+                disabled={selectedPoint == null}
+                checked={
+                  selectedPoint != null
+                    ? filterDefs[selectedPoint].enabled
+                    : false
                 }
+                onCheckedChange={(checked) => {
+                  if (selectedPoint == null) {
+                    return;
+                  }
 
-                setFilterDefs(
-                  produce(filterDefs, (draft) => {
-                    draft[selectedPoint].enabled = event.currentTarget.checked;
-                  }),
-                );
-              }}
-            />
-          </FormField>
-          <FormField label="Type" className="flex flex-col">
-            <select
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100"
-              disabled={selectedPoint == undefined}
-              value={
-                selectedPoint !== undefined
-                  ? filterDefs[selectedPoint].type
-                  : ''
-              }
-              onChange={(event) => {
-                if (selectedPoint == undefined) {
-                  return;
+                  setFilterDefs(
+                    produce(filterDefs, (draft) => {
+                      draft[selectedPoint].enabled = checked;
+                    }),
+                  );
+                }}
+              />
+            </FieldContent>
+          </Field>
+          <Field>
+            <FieldLabel>Type</FieldLabel>
+            <FieldContent>
+              <Select
+                // className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:bg-gray-100"
+                disabled={selectedPoint == undefined}
+                value={
+                  selectedPoint != null
+                    ? filterDefs[selectedPoint].type
+                    : ''
                 }
+                onValueChange={(value) => {
+                  if (selectedPoint == undefined) {
+                    return;
+                  }
 
-                setFilterDefs(
-                  produce(filterDefs, (draft) => {
-                    draft[selectedPoint].type = event.currentTarget
-                      .value as Filter['type'];
-                  }),
-                );
-              }}
-            >
-              {selectedPoint == undefined && <option value=""></option>}
-              <option value="peak">Peak</option>
-              <option value="highpass">Highpass</option>
-              <option value="lowpass">Lowpass</option>
-            </select>
-          </FormField>
+                  setFilterDefs(
+                    produce(filterDefs, (draft) => {
+                      draft[selectedPoint].type = value as Filter['type'];
+                    }),
+                  );
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue>
+                    {selectedPoint == undefined
+                      ? ''
+                      : filterDefs[selectedPoint].type}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {/*{selectedPoint == undefined && <SelectItem value=""></SelectItem>}*/}
+                  <SelectItem value="peak">Peak</SelectItem>
+                  <SelectItem value="highpass">Highpass</SelectItem>
+                  <SelectItem value="lowpass">Lowpass</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldContent>
+          </Field>
           <FormField label="Frequency (Hz)" className="flex flex-col">
             <NumberInput
               disabled={
-                selectedPoint == undefined ||
+                selectedPoint == null ||
                 filterDefs[selectedPoint].frequency == undefined
               }
               value={
-                (selectedPoint !== undefined &&
+                (selectedPoint != null &&
                   filterDefs[selectedPoint].frequency) ||
                 0
               }
@@ -516,12 +580,12 @@ export function FilterEditor({
                 );
               }}
               value={
-                (selectedPoint !== undefined &&
+                (selectedPoint != null &&
                   filterDefs[selectedPoint].gain) ||
                 0
               }
               disabled={
-                selectedPoint == undefined ||
+                selectedPoint == null ||
                 filterDefs[selectedPoint].gain == undefined
               }
             />
@@ -529,11 +593,11 @@ export function FilterEditor({
           <FormField label="Q" className="flex flex-col">
             <NumberInput
               disabled={
-                selectedPoint == undefined ||
+                selectedPoint == null ||
                 filterDefs[selectedPoint].q == undefined
               }
               value={
-                (selectedPoint !== undefined && filterDefs[selectedPoint].q) ||
+                (selectedPoint != null && filterDefs[selectedPoint].q) ||
                 0
               }
               onChange={(value) => {
