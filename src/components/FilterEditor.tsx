@@ -279,8 +279,7 @@ export function FilterEditor({
                 },
                 onClick: (event: SyntheticEvent, targetProps) => {
                   const e = event as React.MouseEvent;
-                  console.log(e);
-                  if (e.detail == 1) { // left click
+                  if (e.detail == 1 && !dragging) { // left click
                     if (selectedPoint != undefined) {
                       onSelectedPointChange(null);
                     }
@@ -474,9 +473,9 @@ export function FilterEditor({
         </VictoryChart>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Field className="flex flex-col">
+          <Field>
             <FieldLabel>Enabled</FieldLabel>
             <FieldContent>
               <Switch
@@ -539,7 +538,8 @@ export function FilterEditor({
               </Select>
             </FieldContent>
           </Field>
-          <FormField label="Frequency (Hz)" className="flex flex-col">
+          <Field>
+            <FieldLabel>Frequency (Hz)</FieldLabel>
             <NumberInput
               disabled={
                 selectedPoint == null ||
@@ -565,8 +565,9 @@ export function FilterEditor({
               min={1}
               max={24000}
             />
-          </FormField>
-          <FormField label="Gain (db)" className="flex flex-col">
+          </Field>
+          <Field>
+            <FieldLabel>Gain (dB)</FieldLabel>
             <DbGainInput
               onChange={(value) => {
                 if (selectedPoint == undefined) {
@@ -589,8 +590,9 @@ export function FilterEditor({
                 filterDefs[selectedPoint].gain == undefined
               }
             />
-          </FormField>
-          <FormField label="Q" className="flex flex-col">
+          </Field>
+          <Field>
+            <FieldLabel>Q</FieldLabel>
             <NumberInput
               disabled={
                 selectedPoint == null ||
@@ -616,7 +618,7 @@ export function FilterEditor({
               min={0.1}
               max={24}
             />
-          </FormField>
+          </Field>
         </div>
       </div>
     </div>
