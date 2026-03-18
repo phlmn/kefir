@@ -5,7 +5,9 @@ import { Switch } from '../ui/switch';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
@@ -77,10 +79,33 @@ export function FilterEditorKnobs({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {/*{selectedPoint == undefined && <SelectItem value=""></SelectItem>}*/}
-                <SelectItem value="peak">Peak</SelectItem>
-                <SelectItem value="highpass">Highpass</SelectItem>
-                <SelectItem value="lowpass">Lowpass</SelectItem>
+                <SelectGroup>
+                  <SelectLabel>General</SelectLabel>
+                  <SelectItem className="pl-6" value="peak">Peak</SelectItem>
+                </SelectGroup>
+
+                <SelectGroup>
+                  <SelectLabel>Lowpass</SelectLabel>
+
+                  <SelectItem className="pl-6" value="lpButterworth2">Butterworth 2 (12 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="lpButterworth4">Butterworth 4 (24 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="lpButterworth6">Butterworth 6 (36 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="lpButterworth8">Butterworth 8 (48 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="lpLinkwitzRiley2">Linkwitz-Riley 2 (12 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="lpLinkwitzRiley4">Linkwitz-Riley 4 (24 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="lpLinkwitzRiley8">Linkwitz-Riley 8 (48 db/oct)</SelectItem>
+                </SelectGroup>
+
+                <SelectGroup>
+                  <SelectLabel>Highpass</SelectLabel>
+                  <SelectItem className="pl-6" value="hpButterworth2">Butterworth 2 (12 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="hpButterworth4">Butterworth 4 (24 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="hpButterworth6">Butterworth 6 (36 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="hpButterworth8">Butterworth 8 (48 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="hpLinkwitzRiley2">Linkwitz-Riley 2 (12 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="hpLinkwitzRiley4">Linkwitz-Riley 4 (24 db/oct)</SelectItem>
+                  <SelectItem className="pl-6" value="hpLinkwitzRiley8">Linkwitz-Riley 8 (48 db/oct)</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
           </FieldContent>

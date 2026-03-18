@@ -1,8 +1,22 @@
-import { biquadPeak } from '@thi.ng/dsp/biquad';
-import { filterResponse } from '@thi.ng/dsp/filter-response';
-import { FilterEditorChart } from './FilterEditorChart';
-import { FilterEditorKnobs } from './FilterEditorKnobs';
-
+import { FilterEditorChart } from './Chart';
+import { FilterEditorKnobs } from './Knobs';
+import {
+  hpButterworth2Fn,
+  hpButterworth4Fn,
+  hpButterworth6Fn,
+  hpButterworth8Fn,
+  hpLinkwitzRiley2Fn,
+  hpLinkwitzRiley4Fn,
+  hpLinkwitzRiley8Fn,
+  lpButterworth2Fn,
+  lpButterworth4Fn,
+  lpButterworth6Fn,
+  lpButterworth8Fn,
+  lpLinkwitzRiley2Fn,
+  lpLinkwitzRiley4Fn,
+  lpLinkwitzRiley8Fn,
+  peakFilterFn,
+} from './filterFunctions';
 
 export function FilterEditor({
   filterDefs,
@@ -54,73 +68,24 @@ export function amplitudeToDb(amp: number) {
   return Math.log10(amp) * 20;
 }
 
-const peakFilter = ({
-  frequency,
-  gain,
-  q,
-}: {
-  frequency: number;
-  gain: number;
-  q: number;
-}) => {
-  const coeffs = biquadPeak(frequency / 48000, q, gain).filterCoeffs();
-  return (f: number) => filterResponse(coeffs, f / 48000).mag;
-};
-
-const highpassFilter = ({
-  frequency,
-  gain,
-  q,
-}: {
-  frequency: number;
-  gain: number;
-  q: number;
-}) => {
-  return (f: number) => {
-    if (gain >= 0) {
-      return 0.0;
-    }
-
-    let offset = frequency / f;
-    let value = Math.log2(offset) * -q - 6;
-
-    if (value < 0) {
-      return Math.min(200, Math.max(-200, value));
-    } else {
-      return 0.0;
-    }
-  };
-};
-
-const lowpassFilter = ({
-  frequency,
-  gain,
-  q,
-}: {
-  frequency: number;
-  gain: number;
-  q: number;
-}) => {
-  return (f: number) => {
-    if (gain >= 0) {
-      return 0.0;
-    }
-
-    let offset = f / frequency;
-    let value = Math.log2(offset) * -q - 6;
-
-    if (value < 0) {
-      return Math.min(200, Math.max(-200, value));
-    } else {
-      return 0.0;
-    }
-  };
-};
-
 const filterMap = {
-  peak: peakFilter,
-  highpass: highpassFilter,
-  lowpass: lowpassFilter,
+  peak: peakFilterFn,
+
+  lpButterworth2: lpButterworth2Fn,
+  lpButterworth4: lpButterworth4Fn,
+  lpButterworth6: lpButterworth6Fn,
+  lpButterworth8: lpButterworth8Fn,
+  lpLinkwitzRiley2: lpLinkwitzRiley2Fn,
+  lpLinkwitzRiley4: lpLinkwitzRiley4Fn,
+  lpLinkwitzRiley8: lpLinkwitzRiley8Fn,
+
+  hpButterworth2: hpButterworth2Fn,
+  hpButterworth4: hpButterworth4Fn,
+  hpButterworth6: hpButterworth6Fn,
+  hpButterworth8: hpButterworth8Fn,
+  hpLinkwitzRiley2: hpLinkwitzRiley2Fn,
+  hpLinkwitzRiley4: hpLinkwitzRiley4Fn,
+  hpLinkwitzRiley8: hpLinkwitzRiley8Fn,
 } as const;
 
 export function filterFnFromDef(def: any) {
