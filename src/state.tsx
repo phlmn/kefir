@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { sendConfig,   ChannelSettings as ChannelSettingsType, buildConfig, } from "./config";
-import { amplitudeToDb, dbToAmplitude, Filter, filterFromDef, freqencyResponse, samplingFrequencies } from "./components/FilterEditor";
+import { amplitudeToDb, dbToAmplitude, Filter, filterFnFromDef, freqencyResponse, samplingFrequencies } from "./components/FilterEditor";
 import { send, ws } from "./ws";
 import { calculateTaps, frequencyResponse, minimumPhase } from "./fir";
 
@@ -192,7 +192,7 @@ function useGlobalStateInner() {
   ): Promise<ComputedFilter> => {
     const frequencies = samplingFrequencies();
     let masterData = freqencyResponse(
-      filters.filter((f) => f.enabled).map((def) => filterFromDef(def)),
+      filters.filter((f) => f.enabled).map((def) => filterFnFromDef(def)),
       frequencies,
     );
     console.log(frequencies, masterData);
