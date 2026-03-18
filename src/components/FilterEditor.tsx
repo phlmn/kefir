@@ -8,12 +8,10 @@ import {
   VictoryScatter,
   VictoryTheme,
   Selection,
-  VictoryContainer,
 } from 'victory';
 import { biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
 import produce from 'immer';
-import { FormField } from './FormField';
 import { NumberInput } from './NumberInput';
 import { DbGainInput } from './DbGainInput';
 import { Field, FieldContent, FieldLabel } from './ui/field';
