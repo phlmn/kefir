@@ -305,31 +305,6 @@ export function FilterEditorChart({
             {
               target: 'data',
               eventHandlers: {
-                onWheel: (event: unknown, targetProps: unknown) => {
-                  const e = event as React.WheelEvent;
-                  e.nativeEvent.preventDefault();
-                  return [
-                    {
-                      target: 'data',
-                      mutation: (props) => {
-                        const newFilterDefs = [...filterDefs];
-                        newFilterDefs[props.index] = {
-                          ...filterDefs[props.index],
-                          q: Math.max(
-                            0.1,
-                            Math.min(
-                              24,
-                              filterDefs[props.index].q +
-                                (e.deltaY * filterDefs[props.index].q) / 100,
-                            ),
-                          ),
-                        };
-                        setFilterDefs(newFilterDefs);
-                        onSelectedPointChange(props.index);
-                      },
-                    },
-                  ];
-                },
                 onMouseDown: () => {
                   return [
                     {
