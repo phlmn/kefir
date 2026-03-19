@@ -163,12 +163,7 @@ export function FilterEditorChart({
               },
               onClick: (event: SyntheticEvent, targetProps) => {
                 const e = event as React.MouseEvent;
-                if (e.detail == 1 && !dragging) {
-                  // left click
-                  if (selectedPoint != undefined) {
-                    onSelectedPointChange(null);
-                  }
-                } else if (e.detail == 2) {
+                if (e.detail == 2) {
                   // double click
                   const parentSVG =
                     targetProps.parentSVG || Selection.getParentSVG(e);
@@ -199,16 +194,16 @@ export function FilterEditorChart({
                   onSelectedPointChange(newFilterDefs.length - 1);
                 }
               },
-              onMouseUp: () => {
-                return [
-                  {
-                    target: 'data',
-                    mutation: () => {
-                      setDragging(false);
-                      containerRef.current?.focus();
-                    },
-                  },
-                ];
+              onMouseUp: (event) => {
+                if (dragging) {
+                  setDragging(false);
+                  containerRef.current?.focus();
+                } else {
+                  const e = event as React.MouseEvent;
+                  if (e.detail == 1) {
+                    onSelectedPointChange(null);
+                  }
+                }
               },
             },
           },
