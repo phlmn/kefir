@@ -337,7 +337,12 @@ function zipToXY(x: number[], y: number[]): { x: number; y: number }[] {
 }
 
 function wrapPhase(phaseDeg: number) {
-  return (phaseDeg + 180) % 360 - 180;
+  // modulo in JS behaves weirdly for negative numbers (-1 % 360 = -1, not 359)
+  if (phaseDeg < 0) {
+    return (phaseDeg - 180) % 360 + 180;
+  } else {
+    return (phaseDeg + 180) % 360 - 180;
+  }
 }
 
 function radToDeg(rad: number) {
