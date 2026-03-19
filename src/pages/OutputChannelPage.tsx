@@ -68,7 +68,7 @@ export function OutputChannelPage() {
       </div>
 
       <Card>
-        <CardHeader>Equalizer</CardHeader>
+        <CardHeader>IIR Filter</CardHeader>
         <CardContent>
           <FilterEditor
             filterDefs={filterDefs}
@@ -79,76 +79,6 @@ export function OutputChannelPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>Lowpass</CardHeader>
-        <CardContent>
-          <Field>
-            <FieldLabel>Type</FieldLabel>
-            <Select
-            // value={settings.lowpass.type}
-            // onChange={(value) => onChange({ lowpass: { ...settings.lowpass, type: value } })}
-            >
-              <SelectTrigger>
-                <SelectValue>LR4</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Linkwitz–Riley</SelectLabel>
-                  <SelectItem className="pl-6" value="lr2">
-                    <b>LR2</b> (12 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="lr4">
-                    <b>LR4</b> (24 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="lr6">
-                    <b>LR6</b> (36 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="lr8">
-                    <b>LR8</b> (48 dB/oct)
-                  </SelectItem>
-                </SelectGroup>
-                <SelectGroup>
-                  <SelectLabel>Butterworth</SelectLabel>
-                  <SelectItem className="pl-6" value="b1">
-                    <b>B1</b> (6 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="b2">
-                    <b>B2</b> (12 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="b3">
-                    <b>B3</b> (18 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="b4">
-                    <b>B4</b> (24 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="b5">
-                    <b>B5</b> (30 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="b6">
-                    <b>B6</b> (36 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="b7">
-                    <b>B7</b> (42 dB/oct)
-                  </SelectItem>
-                  <SelectItem className="pl-6" value="b8">
-                    <b>B8</b> (48 dB/oct)
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field>
-            <FieldLabel>Frequency (Hz)</FieldLabel>
-            <NumberInput
-              // value={settings.lowpass.frequency}
-              // onChange={(value) => onChange({ lowpass: { ...settings.lowpass, frequency: value } })}
-              min={0}
-              max={20000}
-              step={1}
-            />
-          </Field>
-        </CardContent>
-      </Card>
       <GeneralSettings settings={settings} onChange={updateSettings} />
       <LimiterSettings settings={settings.limiter} onChange={updateLimiter} />
 

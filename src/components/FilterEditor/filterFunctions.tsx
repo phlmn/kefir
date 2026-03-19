@@ -1,7 +1,16 @@
+import { FilterResponse } from '@thi.ng/dsp';
 import { biquadHP, biquadLP, biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
 
 const FS = 48000;
+
+export function combineResponses(filterResponses: FilterResponse[]): FilterResponse {
+  return filterResponses.reduce((acc, r) => ({
+    freq: r.freq,
+    mag: acc.mag + r.mag,
+    phase: acc.phase + r.phase,
+  }), { freq: 0, mag: 0, phase: 0 });
+}
 
 export const peakFilterFn = ({
   frequency,
@@ -13,15 +22,17 @@ export const peakFilterFn = ({
   q: number;
 }) => {
   const coeffs = biquadPeak(frequency / FS, q, gain).filterCoeffs();
-  return (f: number) => filterResponse(coeffs, f / FS).mag;
+  return (f: number) => filterResponse(coeffs, f / FS);
 };
 
-// https://www.hxaudiolab.com/uploads/2/5/5/3/25532092/cascading_biquads_to_create_even-order_highlow_pass_filters_2.pdf
 function cascadingBiquadLpFn(frequency: number, qs: number[]) {
   const coeffs = qs.map((q) => biquadLP(frequency / FS, q).filterCoeffs());
-  return (f: number) =>
-    coeffs.reduce((acc, c) => acc + filterResponse(c, f / FS).mag, 0);
+  return (f: number) => combineResponses(coeffs.map((c) => filterResponse(c, f / FS)));
 }
+
+// Coefficients from:
+// https://www.hxaudiolab.com/uploads/2/5/5/3/25532092/cascading_biquads_to_create_even-order_highlow_pass_filters_2.pdf
+// https://github.com/HEnquist/camilladsp/blob/master/filterfunctions.md
 
 export const lpButterworth2Fn = ({ frequency }: { frequency: number }) =>
   cascadingBiquadLpFn(frequency, [0.71]);
@@ -44,12 +55,15 @@ export const lpLinkwitzRiley4Fn = ({ frequency }: { frequency: number }) =>
 export const lpLinkwitzRiley8Fn = ({ frequency }: { frequency: number }) =>
   cascadingBiquadLpFn(frequency, [0.54, 1.31, 0.54, 1.31]);
 
-// https://www.hxaudiolab.com/uploads/2/5/5/3/25532092/cascading_biquads_to_create_even-order_highlow_pass_filters_2.pdf
+
 function cascadingBiquadHpFn(frequency: number, qs: number[]) {
   const coeffs = qs.map((q) => biquadHP(frequency / FS, q).filterCoeffs());
-  return (f: number) =>
-    coeffs.reduce((acc, c) => acc + filterResponse(c, f / FS).mag, 0);
+  return (f: number) => combineResponses(coeffs.map((c) => filterResponse(c, f / FS)));
 }
+
+// Coefficients from:
+// https://www.hxaudiolab.com/uploads/2/5/5/3/25532092/cascading_biquads_to_create_even-order_highlow_pass_filters_2.pdf
+// https://github.com/HEnquist/camilladsp/blob/master/filterfunctions.md
 
 export const hpButterworth2Fn = ({ frequency }: { frequency: number }) =>
   cascadingBiquadHpFn(frequency, [0.71]);

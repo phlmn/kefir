@@ -1,6 +1,8 @@
+import { FilterResponse } from '@thi.ng/dsp';
 import { FilterEditorChart } from './Chart';
 import { FilterEditorKnobs } from './Knobs';
 import {
+  combineResponses,
   hpButterworth2Fn,
   hpButterworth4Fn,
   hpButterworth6Fn,
@@ -90,11 +92,8 @@ const filterMap = {
 
 export function filterFnFromDef(def: any) {
   const { type, ...opts } = def;
-  const createFilterFn = (filterMap as any)[type];
-
-  if (createFilterFn) {
-    return createFilterFn(opts);
-  }
+  const createFilterFn = filterMap[type as keyof typeof filterMap];
+  return createFilterFn(opts);
 }
 
 export function samplingFrequencies(): number[] {
@@ -108,10 +107,8 @@ export function samplingFrequencies(): number[] {
 }
 
 export function freqencyResponse(
-  filters: Array<(f: number) => number>,
+  filters: Array<(f: number) => FilterResponse>,
   frequencies: number[],
 ) {
-  return frequencies.map((freq) =>
-    filters.reduce((acc, fn) => acc + fn(freq), 0),
-  );
+  return frequencies.map((freq) => combineResponses(filters.map((fn) => fn(freq))));
 }

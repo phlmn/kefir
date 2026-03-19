@@ -36,8 +36,9 @@ export function FilterEditorChart({
 }) {
   const filters = filterDefs.filter((f) => f.enabled).map(filterFnFromDef);
   const frequencies = samplingFrequencies();
-  const masterGains = freqencyResponse(filters, frequencies);
-  const masterData = zipToXY(frequencies, masterGains);
+  const masterReponse = freqencyResponse(filters, frequencies);
+  const masterMag = zipToXY(frequencies, masterReponse.map((r) => r.mag));
+  const masterPhase = zipToXY(frequencies, masterReponse.map((r) => wrapPhase(radToDeg(r.phase))));
 
   const [dragging, setDragging] = useState(false);
 
@@ -47,7 +48,7 @@ export function FilterEditorChart({
     if (selectedFilter) {
       selectedData = zipToXY(
         frequencies,
-        freqencyResponse([selectedFilter], frequencies),
+        freqencyResponse([selectedFilter], frequencies).map((r) => r.mag),
       );
     }
   }
@@ -243,8 +244,13 @@ export function FilterEditorChart({
           tickFormat={(val) => (val >= 1000 ? `${val / 1000}k` : val)}
         />
         <VictoryLine
+          style={{ data: { strokeWidth: 1, stroke: 'var(--color-blue-400)', opacity: 0.4 } }}
+          data={degToAxis(masterPhase)}
+          interpolation="catmullRom"
+        />
+        <VictoryLine
           style={{ data: { strokeWidth: 2, stroke: 'var(--color-red-500)' } }}
-          data={dbToAxis(masterData)}
+          data={dbToAxis(masterMag)}
           interpolation="catmullRom"
         />
         {computedGain && (
@@ -328,4 +334,12 @@ export function FilterEditorChart({
 
 function zipToXY(x: number[], y: number[]): { x: number; y: number }[] {
   return x.map((x, i) => ({ x, y: y[i] }));
+}
+
+function wrapPhase(phaseDeg: number) {
+  return (phaseDeg + 180) % 360 - 180;
+}
+
+function radToDeg(rad: number) {
+  return rad * 180 / Math.PI;
 }
