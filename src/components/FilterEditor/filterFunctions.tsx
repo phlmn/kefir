@@ -1,4 +1,4 @@
-import { FilterResponse } from '@thi.ng/dsp';
+import { FilterConfig, FilterResponse } from '@thi.ng/dsp';
 import { biquadHP, biquadLP, biquadPeak } from '@thi.ng/dsp/biquad';
 import { filterResponse } from '@thi.ng/dsp/filter-response';
 
@@ -85,3 +85,19 @@ export const hpLinkwitzRiley4Fn = ({ frequency }: { frequency: number }) =>
 
 export const hpLinkwitzRiley8Fn = ({ frequency }: { frequency: number }) =>
   cascadingBiquadHpFn(frequency, [0.54, 1.31, 0.54, 1.31]);
+
+
+export function allpassFn({ frequency, q }: { frequency: number, q: number }) {
+  const omega = 2 * Math.PI * frequency / FS;
+  const alpha = Math.sin(omega) / (2 * q);
+  const coeffs: FilterConfig = {
+    zeroes: [1 + alpha, -2 * Math.cos(omega), 1 - alpha],
+    poles: [1 - alpha, -2 * Math.cos(omega), 1 + alpha],
+  };
+  return (f: number) => filterResponse(coeffs, f / FS);
+}
+
+export function allpass2Fn({ frequency, q }: { frequency: number, q: number }) {
+  const a1 = allpassFn({ frequency, q });
+  return (f: number) => combineResponses([a1(f), a1(f)]);
+}

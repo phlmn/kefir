@@ -72,16 +72,14 @@ export function FilterEditorKnobs({
               }}
             >
               <SelectTrigger>
-                <SelectValue>
-                  {selectedPoint == undefined
-                    ? ''
-                    : filterDefs[selectedPoint].type}
-                </SelectValue>
+                <SelectValue/>
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>General</SelectLabel>
                   <SelectItem className="pl-6" value="peak">Peak</SelectItem>
+                  <SelectItem className="pl-6" value="allpass">Allpass</SelectItem>
+                  <SelectItem className="pl-6" value="allpass2">Allpass 2</SelectItem>
                 </SelectGroup>
 
                 <SelectGroup>

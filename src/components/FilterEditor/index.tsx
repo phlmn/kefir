@@ -1,7 +1,9 @@
-import { FilterResponse } from '@thi.ng/dsp';
+import { allpass, FilterResponse } from '@thi.ng/dsp';
 import { FilterEditorChart } from './Chart';
 import { FilterEditorKnobs } from './Knobs';
 import {
+  allpass2Fn,
+  allpassFn,
   combineResponses,
   hpButterworth2Fn,
   hpButterworth4Fn,
@@ -72,6 +74,8 @@ export function amplitudeToDb(amp: number) {
 
 const filterMap = {
   peak: peakFilterFn,
+  allpass: allpassFn,
+  allpass2: allpass2Fn,
 
   lpButterworth2: lpButterworth2Fn,
   lpButterworth4: lpButterworth4Fn,
