@@ -37,8 +37,14 @@ export function FilterEditorChart({
   const filters = filterDefs.filter((f) => f.enabled).map(filterFnFromDef);
   const frequencies = samplingFrequencies();
   const masterReponse = freqencyResponse(filters, frequencies);
-  const masterMag = zipToXY(frequencies, masterReponse.map((r) => r.mag));
-  const masterPhase = zipToXY(frequencies, masterReponse.map((r) => wrapPhase(radToDeg(r.phase))));
+  const masterMag = zipToXY(
+    frequencies,
+    masterReponse.map((r) => r.mag),
+  );
+  const masterPhase = zipToXY(
+    frequencies,
+    masterReponse.map((r) => wrapPhase(radToDeg(r.phase))),
+  );
 
   const [dragging, setDragging] = useState(false);
 
@@ -111,8 +117,11 @@ export function FilterEditorChart({
                 fontFamily: 'inherit',
               },
               grid: {
-                stroke: 'var(--color-neutral-600)',
-                strokeDasharray: '2, 2',
+                stroke: ({ tick }) =>
+                  tick == 0
+                    ? 'var(--color-neutral-500)'
+                    : 'var(--color-neutral-700)',
+                strokeDasharray: ({ tick }) => (tick == 0 ? 0 : '2, 2'),
               },
             },
           },
@@ -208,12 +217,6 @@ export function FilterEditorChart({
       >
         <VictoryAxis
           label="Gain (db)"
-          style={{
-            axisLabel: { fontSize: 12, padding: 25 },
-            tickLabels: { fontSize: 12, padding: 5 },
-            ticks: { stroke: 0 },
-            axis: { stroke: 0 },
-          }}
           dependentAxis
           tickValues={[-1, -0.5, 0, 0.5, 1]}
           tickFormat={[-20, -10, 0, 10, 20]}
@@ -221,12 +224,6 @@ export function FilterEditorChart({
         <VictoryAxis
           label="Phase (deg)"
           orientation={'right'}
-          style={{
-            axisLabel: { fontSize: 12, padding: 25 },
-            tickLabels: { fontSize: 12, padding: 5 },
-            ticks: { stroke: 0 },
-            axis: { stroke: 0 },
-          }}
           dependentAxis
           tickValues={[-1, -0.5, 0, 0.5, 1]}
           tickFormat={[-180, -90, 0, 90, 180]}
@@ -244,7 +241,13 @@ export function FilterEditorChart({
           tickFormat={(val) => (val >= 1000 ? `${val / 1000}k` : val)}
         />
         <VictoryLine
-          style={{ data: { strokeWidth: 1, stroke: 'var(--color-blue-400)', opacity: 0.4 } }}
+          style={{
+            data: {
+              strokeWidth: 1,
+              stroke: 'var(--color-blue-400)',
+              opacity: 0.5,
+            },
+          }}
           data={degToAxis(masterPhase)}
           interpolation="catmullRom"
         />
@@ -339,12 +342,12 @@ function zipToXY(x: number[], y: number[]): { x: number; y: number }[] {
 function wrapPhase(phaseDeg: number) {
   // modulo in JS behaves weirdly for negative numbers (-1 % 360 = -1, not 359)
   if (phaseDeg < 0) {
-    return (phaseDeg - 180) % 360 + 180;
+    return ((phaseDeg - 180) % 360) + 180;
   } else {
-    return (phaseDeg + 180) % 360 - 180;
+    return ((phaseDeg + 180) % 360) - 180;
   }
 }
 
 function radToDeg(rad: number) {
-  return rad * 180 / Math.PI;
+  return (rad * 180) / Math.PI;
 }

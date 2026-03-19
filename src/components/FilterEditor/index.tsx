@@ -1,4 +1,4 @@
-import { allpass, FilterResponse } from '@thi.ng/dsp';
+import { FilterResponse } from '@thi.ng/dsp';
 import { FilterEditorChart } from './Chart';
 import { FilterEditorKnobs } from './Knobs';
 import {
