@@ -195,37 +195,37 @@ function useGlobalStateInner() {
   );
 
   const calculate = async () => {
-    const bassFilter = await calculateFirFilter(
-      [
-        ...(bypassHouseCurve ? [] : houseFilters.filter((f) => f.enabled)),
-        ...bassFilters.filter((f) => f.enabled),
-      ],
-      fs,
-      ntaps,
-      isMinimumPhase,
-    );
-    setComputedFilterBass(bassFilter);
-    const topsFilter = await calculateFirFilter(
-      [
-        ...(bypassHouseCurve ? [] : houseFilters.filter((f) => f.enabled)),
-        ...topsFilters.filter((f) => f.enabled),
-      ],
-      fs,
-      ntaps,
-      isMinimumPhase,
-    );
-    setComputedFilterTops(topsFilter);
+    // const bassFilter = await calculateFirFilter(
+    //   [
+    //     ...(bypassHouseCurve ? [] : houseFilters.filter((f) => f.enabled)),
+    //     ...bassFilters.filter((f) => f.enabled),
+    //   ],
+    //   fs,
+    //   ntaps,
+    //   isMinimumPhase,
+    // );
+    // setComputedFilterBass(bassFilter);
+    // const topsFilter = await calculateFirFilter(
+    //   [
+    //     ...(bypassHouseCurve ? [] : houseFilters.filter((f) => f.enabled)),
+    //     ...topsFilters.filter((f) => f.enabled),
+    //   ],
+    //   fs,
+    //   ntaps,
+    //   isMinimumPhase,
+    // );
+    // setComputedFilterTops(topsFilter);
 
-    const updatedChannelSettings = channelSettings.map(
-      (settings: ChannelSettingsType, index: number) => ({
-        ...settings,
-        firTaps: index < 2 ? topsFilter.taps : index < 4 ? bassFilter.taps : [],
-      }),
-    );
+    // const updatedChannelSettings = channelSettings.map(
+    //   (settings: ChannelSettingsType, index: number) => ({
+    //     ...settings,
+    //     firTaps: index < 2 ? topsFilter.taps : index < 4 ? bassFilter.taps : [],
+    //   }),
+    // );
 
     const config = buildConfig(
       Array(8).fill({ gain: 0 }),
-      updatedChannelSettings,
+      channelSettings,
     );
 
     await sendConfig(config);
