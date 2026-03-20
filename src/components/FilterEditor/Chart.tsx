@@ -239,7 +239,7 @@ export function FilterEditorChart({
           style={{
             data: {
               strokeWidth: 1,
-              stroke: 'var(--color-blue-400)',
+              stroke: 'var(--color-red-300)',
               opacity: 0.5,
             },
           }}
