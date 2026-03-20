@@ -1,4 +1,4 @@
-import { FilterEditor, Filter } from '@/components/FilterEditor';
+import { FilterEditor } from '@/components/FilterEditor';
 import { NumberInput } from '@/components/NumberInput';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -23,7 +23,6 @@ export function OutputChannelPage() {
   const params = useParams();
   const channel = parseInt(params.channel || '1') - 1;
   const { channelSettings, setChannelSettings } = useGlobalState();
-  const [filterDefs, setFiltersDefs] = useState<Filter[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<number | null>(null);
 
   const settings = channelSettings[channel];
@@ -71,8 +70,12 @@ export function OutputChannelPage() {
         <CardHeader>IIR Filter</CardHeader>
         <CardContent>
           <FilterEditor
-            filterDefs={filterDefs}
-            setFilterDefs={setFiltersDefs}
+            filterDefs={settings.iirFilters}
+            setFilterDefs={(filters) =>
+              updateSettings({
+                iirFilters: filters,
+              })
+            }
             selectedPoint={selectedFilter}
             onSelectedPointChange={setSelectedFilter}
           />

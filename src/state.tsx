@@ -146,6 +146,13 @@ function useGlobalStateInner() {
         };
       }
 
+      if (!migratedChannel.iirFilters) {
+        migratedChannel = {
+          ...migratedChannel,
+          iirFilters: [],
+        };
+      }
+
       return migratedChannel;
     });
 

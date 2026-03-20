@@ -1,4 +1,5 @@
-import { coeffParams, coeffsFromDef, FilterDef, filterFnFromDef } from './iirFilter';
+import { SwitchableFilterDef } from './components/FilterEditor';
+import { coeffParams, coeffsFromDef } from './iirFilter';
 import { send } from './ws';
 
 export type SpeakerParams = {
@@ -23,7 +24,7 @@ export type ChannelSettings = {
     decay: number;
   };
   firTaps: number[];
-  iirFilters: FilterDef[];
+  iirFilters: SwitchableFilterDef[];
 };
 
 export type InputSettings = {
@@ -60,22 +61,24 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
     });
   }
 
-  settings.iirFilters.forEach((filter, filterIdx) => {
-    const coeffs = coeffsFromDef(filter);
+  settings.iirFilters
+    .filter((f) => f.enabled)
+    .forEach((filter, filterIdx) => {
+      const coeffs = coeffsFromDef(filter);
 
-    coeffs.forEach((c, i) => {
-      filters.push({
-        name: filterName(`iir_${filterIdx}_${i}`),
-        config: {
-          type: 'Biquad',
-          parameters: {
-            type: 'Free',
-            ...coeffParams(c),
+      coeffs.forEach((c, i) => {
+        filters.push({
+          name: filterName(`iir_${filterIdx}_${i}`),
+          config: {
+            type: 'Biquad',
+            parameters: {
+              type: 'Free',
+              ...coeffParams(c),
+            },
           },
-        },
+        });
       });
-    })
-  });
+    });
 
   if (settings.limiter.enabled) {
     filters.push({
