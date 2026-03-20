@@ -1,3 +1,4 @@
+import { coeffParams, coeffsFromDef, FilterDef, filterFnFromDef } from './iirFilter';
 import { send } from './ws';
 
 export type SpeakerParams = {
@@ -5,15 +6,6 @@ export type SpeakerParams = {
   limiterThreshold: number;
   limiterRmsSamples: number;
   limiterDecay: number;
-};
-
-export type IirFilter = {
-  type: 'biquad';
-  a1: number;
-  a2: number;
-  a3: number;
-  b1: number;
-  b2: number;
 };
 
 export type ChannelSettings = {
@@ -31,7 +23,7 @@ export type ChannelSettings = {
     decay: number;
   };
   firTaps: number[];
-  iirFilters: IirFilter[];
+  iirFilters: FilterDef[];
 };
 
 export type InputSettings = {
@@ -68,20 +60,21 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
     });
   }
 
-  settings.iirFilters.forEach((filter) => {
-    filters.push({
-      name: filterName(`iir_${filter.type}`),
-      config: {
-        type: 'Biquad',
-        parameters: {
-          a1: filter.a1,
-          a2: filter.a2,
-          a3: filter.a3,
-          b1: filter.b1,
-          b2: filter.b2,
+  settings.iirFilters.forEach((filter, filterIdx) => {
+    const coeffs = coeffsFromDef(filter);
+
+    coeffs.forEach((c, i) => {
+      filters.push({
+        name: filterName(`iir_${filterIdx}_${i}`),
+        config: {
+          type: 'Biquad',
+          parameters: {
+            type: 'Free',
+            ...coeffParams(c),
+          },
         },
-      },
-    });
+      });
+    })
   });
 
   if (settings.limiter.enabled) {

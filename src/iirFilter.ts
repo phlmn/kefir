@@ -16,7 +16,7 @@ export type FilterDef = {
   q: number;
 };
 
-export const peakFilterFn = ({
+export const peakFilterCoeffs = ({
   frequency,
   gain,
   q,
@@ -25,14 +25,11 @@ export const peakFilterFn = ({
   gain: number;
   q: number;
 }) => {
-  const coeffs = biquadPeak(frequency / FS, q, gain).filterCoeffs();
-  return (f: number) => filterResponse(coeffs, f / FS);
+  return biquadPeak(frequency / FS, q, gain).filterCoeffs();
 };
 
-function cascadingBiquadLpFn(frequency: number, qs: number[]) {
-  const coeffs = qs.map((q) => biquadLP(frequency / FS, q).filterCoeffs());
-  return (f: number) =>
-    combineResponses(coeffs.map((c) => filterResponse(c, f / FS)));
+function cascadingBiquadLpCoeffs(frequency: number, qs: number[]) {
+  return qs.map((q) => biquadLP(frequency / FS, q).filterCoeffs());
 }
 
 // Coefficients from:
@@ -40,30 +37,30 @@ function cascadingBiquadLpFn(frequency: number, qs: number[]) {
 // https://github.com/HEnquist/camilladsp/blob/master/filterfunctions.md
 
 export const lpButterworth2Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadLpFn(frequency, [0.71]);
+  cascadingBiquadLpCoeffs(frequency, [0.71]);
 
 export const lpButterworth4Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadLpFn(frequency, [0.54, 1.31]);
+  cascadingBiquadLpCoeffs(frequency, [0.54, 1.31]);
 
 export const lpButterworth6Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadLpFn(frequency, [0.54, 0.71, 1.93]);
+  cascadingBiquadLpCoeffs(frequency, [0.54, 0.71, 1.93]);
 
 export const lpButterworth8Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadLpFn(frequency, [0.51, 0.6, 0.9, 2.56]);
+  cascadingBiquadLpCoeffs(frequency, [0.51, 0.6, 0.9, 2.56]);
 
 export const lpLinkwitzRiley2Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadLpFn(frequency, [0.5]);
+  cascadingBiquadLpCoeffs(frequency, [0.5]);
 
 export const lpLinkwitzRiley4Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadLpFn(frequency, [0.71, 0.71]);
+  cascadingBiquadLpCoeffs(frequency, [0.71, 0.71]);
 
 export const lpLinkwitzRiley8Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadLpFn(frequency, [0.54, 1.31, 0.54, 1.31]);
+  cascadingBiquadLpCoeffs(frequency, [0.54, 1.31, 0.54, 1.31]);
 
-function cascadingBiquadHpFn(frequency: number, qs: number[]) {
-  const coeffs = qs.map((q) => biquadHP(frequency / FS, q).filterCoeffs());
-  return (f: number) =>
-    combineResponses(coeffs.map((c) => filterResponse(c, f / FS)));
+function cascadingBiquadHpCoeffs(frequency: number, qs: number[]) {
+  return qs.map((q) => biquadHP(frequency / FS, q).filterCoeffs());
+  // return (f: number) =>
+  //   combineResponses(coeffs.map((c) => filterResponse(c, f / FS)));
 }
 
 // Coefficients from:
@@ -71,45 +68,58 @@ function cascadingBiquadHpFn(frequency: number, qs: number[]) {
 // https://github.com/HEnquist/camilladsp/blob/master/filterfunctions.md
 
 export const hpButterworth2Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadHpFn(frequency, [0.71]);
+  cascadingBiquadHpCoeffs(frequency, [0.71]);
 
 export const hpButterworth4Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadHpFn(frequency, [0.54, 1.31]);
+  cascadingBiquadHpCoeffs(frequency, [0.54, 1.31]);
 
 export const hpButterworth6Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadHpFn(frequency, [0.54, 0.71, 1.93]);
+  cascadingBiquadHpCoeffs(frequency, [0.54, 0.71, 1.93]);
 
 export const hpButterworth8Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadHpFn(frequency, [0.51, 0.6, 0.9, 2.56]);
+  cascadingBiquadHpCoeffs(frequency, [0.51, 0.6, 0.9, 2.56]);
 
 export const hpLinkwitzRiley2Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadHpFn(frequency, [0.5]);
+  cascadingBiquadHpCoeffs(frequency, [0.5]);
 
 export const hpLinkwitzRiley4Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadHpFn(frequency, [0.71, 0.71]);
+  cascadingBiquadHpCoeffs(frequency, [0.71, 0.71]);
 
 export const hpLinkwitzRiley8Fn = ({ frequency }: { frequency: number }) =>
-  cascadingBiquadHpFn(frequency, [0.54, 1.31, 0.54, 1.31]);
+  cascadingBiquadHpCoeffs(frequency, [0.54, 1.31, 0.54, 1.31]);
 
-export function allpassFn({ frequency, q }: { frequency: number; q: number }) {
+export function allpassCoeffs({
+  frequency,
+  q,
+}: {
+  frequency: number;
+  q: number;
+}) {
   const omega = (2 * Math.PI * frequency) / FS;
   const alpha = Math.sin(omega) / (2 * q);
   const coeffs: FilterConfig = {
     zeroes: [1 + alpha, -2 * Math.cos(omega), 1 - alpha],
     poles: [1 - alpha, -2 * Math.cos(omega), 1 + alpha],
   };
-  return (f: number) => filterResponse(coeffs, f / FS);
+
+  return coeffs;
 }
 
-export function allpass2Fn({ frequency, q }: { frequency: number; q: number }) {
-  const a1 = allpassFn({ frequency, q });
-  return (f: number) => combineResponses([a1(f), a1(f)]);
+export function allpass2Coeffs({
+  frequency,
+  q,
+}: {
+  frequency: number;
+  q: number;
+}) {
+  const a1 = allpassCoeffs({ frequency, q });
+  return [a1, a1];
 }
 
 const filterMap = {
-  peak: peakFilterFn,
-  allpass: allpassFn,
-  allpass2: allpass2Fn,
+  peak: peakFilterCoeffs,
+  allpass: allpassCoeffs,
+  allpass2: allpass2Coeffs,
 
   lpButterworth2: lpButterworth2Fn,
   lpButterworth4: lpButterworth4Fn,
@@ -128,8 +138,34 @@ const filterMap = {
   hpLinkwitzRiley8: hpLinkwitzRiley8Fn,
 } as const;
 
-export function filterFnFromDef(def: FilterDef) {
+export function coeffsFromDef(def: FilterDef): FilterConfig[] {
   const { type, ...opts } = def;
-  const createFilterFn = filterMap[type as keyof typeof filterMap];
-  return createFilterFn(opts);
+  const coeffsFn = filterMap[type as keyof typeof filterMap];
+  const coeffs = coeffsFn(opts);
+
+  if (Array.isArray(coeffs)) {
+    return coeffs;
+  } else {
+    return [coeffs];
+  }
+}
+
+export function filterFnFromDef(def: FilterDef) {
+  const coeffs = coeffsFromDef(def);
+  return (freq: number) => combineResponses(coeffs.map((c) => filterResponse(c, freq / FS)));
+}
+
+export function coeffParams(filter: FilterConfig) {
+  // should be the reverse of:
+  // {
+  //   zeroes: [this._a0, this._a1, this._a2],
+  //   poles: [1, this._b1, this._b2]
+  // }
+  return {
+    a1: filter.zeroes[0],
+    a2: filter.zeroes[1],
+    a3: filter.zeroes[2],
+    b1: filter.poles[1],
+    b2: filter.poles[2],
+  };
 }
