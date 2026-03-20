@@ -156,16 +156,16 @@ export function filterFnFromDef(def: FilterDef) {
 }
 
 export function coeffParams(filter: FilterConfig) {
-  // should be the reverse of:
+  // should be the reverse of this code, but a and b are swapped:
   // {
   //   zeroes: [this._a0, this._a1, this._a2],
   //   poles: [1, this._b1, this._b2]
   // }
   return {
-    a1: filter.zeroes[0],
-    a2: filter.zeroes[1],
-    a3: filter.zeroes[2],
-    b1: filter.poles[1],
-    b2: filter.poles[2],
+    a1: filter.poles[1],
+    a2: filter.poles[2],
+    b0: filter.zeroes[0],
+    b1: filter.zeroes[1],
+    b2: filter.zeroes[2],
   };
 }
