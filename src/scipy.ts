@@ -98,13 +98,13 @@ def fn(gain, phase):
     return np.real(transformed), np.imag(transformed)
 `);
 
-export const minimumPhase: (taps: number[]) => Promise<number[]> =
+export const calculateMinimumPhase: (taps: number[]) => Promise<number[]> =
   makePythonFunction(`
 def fn(taps):
     return scipy.signal.minimum_phase(taps.to_py())
 `);
 
-export const frequencyResponse: (
+export const frequencyResponseFromFir: (
   taps: number[],
   frequencies: number[],
 ) => Promise<[number[], number[], number[]]> = makePythonFunction(`

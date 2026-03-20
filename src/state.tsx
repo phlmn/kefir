@@ -1,9 +1,13 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { useLocalStorage } from "./useLocalStorage";
-import { sendConfig,   ChannelSettings as ChannelSettingsType, buildConfig, } from "./config";
-import { amplitudeToDb, dbToAmplitude, Filter, filterFnFromDef, freqencyResponse, samplingFrequencies } from "./components/FilterEditor";
-import { send, ws } from "./ws";
-import { calculateTaps, frequencyResponse, minimumPhase } from "./fir";
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useLocalStorage } from './useLocalStorage';
+import {
+  sendConfig,
+  ChannelSettings as ChannelSettingsType,
+  buildConfig,
+} from './config';
+import { send, ws } from './ws';
+import { calculateFirFilter, ComputedFirFilter } from './firFilter';
+import { SwitchableFilterDef } from './components/FilterEditor';
 
 function useGlobalStateInner() {
   const ntaps = 4800;
@@ -11,15 +15,15 @@ function useGlobalStateInner() {
 
   const [houseFilters, setHouseFilters] = useLocalStorage(
     'houseFilters',
-    [] as Filter[],
+    [] as SwitchableFilterDef[],
   );
   const [bassFilters, setBassFilters] = useLocalStorage(
     'bassFilters',
-    [] as Filter[],
+    [] as SwitchableFilterDef[],
   );
   const [topsFilters, setTopsFilters] = useLocalStorage(
     'topsFilters',
-    [] as Filter[],
+    [] as SwitchableFilterDef[],
   );
 
   const [bypassHouseCurve, setBypassHouseCurve] = useLocalStorage(
@@ -88,6 +92,7 @@ function useGlobalStateInner() {
       decay: 12,
     },
     firTaps: [],
+    iirFilters: [],
   });
 
   // Helper function to migrate channel settings from old format and expand to 10 channels
@@ -175,63 +180,33 @@ function useGlobalStateInner() {
     setChannelSettingsRaw(newSettings);
   };
 
-  type ComputedFilter = {
-    taps: number[];
-    gain: { x: number; y: number }[];
-    phase: { x: number; y: number }[];
-  };
   const [computedFilterBass, setComputedFilterBass] = useState(
-    undefined as undefined | ComputedFilter,
+    undefined as undefined | ComputedFirFilter,
   );
   const [computedFilterTops, setComputedFilterTops] = useState(
-    undefined as undefined | ComputedFilter,
+    undefined as undefined | ComputedFirFilter,
   );
 
-  const calculateFilters = async (
-    filters: Filter[],
-  ): Promise<ComputedFilter> => {
-    const frequencies = samplingFrequencies();
-    let masterData = freqencyResponse(
-      filters.filter((f) => f.enabled).map((def) => filterFnFromDef(def)),
-      frequencies,
-    );
-    console.log(frequencies, masterData);
-    let taps = await calculateTaps(
-      ntaps,
-      [0, ...frequencies, fs / 2],
-      [
-        dbToAmplitude(masterData[0]) * 2,
-        ...masterData.map(
-          (d) => (isMinimumPhase ? dbToAmplitude(d) : 1) * dbToAmplitude(d),
-        ),
-        0,
-      ],
-    );
-    if (isMinimumPhase) {
-      taps = await minimumPhase(taps);
-    }
-    taps = [...taps]; // we convert the maybe Float64Array to number[]
-    const [w, gainRaw, phaseRaw] = await frequencyResponse(taps, frequencies);
-    const gain = new Array(...w).map((freq, i) => {
-      return { x: freq, y: amplitudeToDb(gainRaw[i]) };
-    });
-    const phase = new Array(...w).map((freq, i) => {
-      return { x: freq, y: phaseRaw[i] };
-    });
-
-    return { taps, gain, phase };
-  };
-
   const calculate = async () => {
-    const bassFilter = await calculateFilters([
-      ...(bypassHouseCurve ? [] : houseFilters),
-      ...bassFilters,
-    ]);
+    const bassFilter = await calculateFirFilter(
+      [
+        ...(bypassHouseCurve ? [] : houseFilters.filter((f) => f.enabled)),
+        ...bassFilters.filter((f) => f.enabled),
+      ],
+      fs,
+      ntaps,
+      isMinimumPhase,
+    );
     setComputedFilterBass(bassFilter);
-    const topsFilter = await calculateFilters([
-      ...(bypassHouseCurve ? [] : houseFilters),
-      ...topsFilters,
-    ]);
+    const topsFilter = await calculateFirFilter(
+      [
+        ...(bypassHouseCurve ? [] : houseFilters.filter((f) => f.enabled)),
+        ...topsFilters.filter((f) => f.enabled),
+      ],
+      fs,
+      ntaps,
+      isMinimumPhase,
+    );
     setComputedFilterTops(topsFilter);
 
     const updatedChannelSettings = channelSettings.map(
@@ -272,9 +247,15 @@ function useGlobalStateInner() {
   };
 }
 
-export const GlobalStateContext = createContext<ReturnType<typeof useGlobalStateInner> | null>(null);
+export const GlobalStateContext = createContext<ReturnType<
+  typeof useGlobalStateInner
+> | null>(null);
 
-export const GlobalStateProvider = ({ children }: { children: React.ReactNode }) => {
+export const GlobalStateProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const globalState = useGlobalStateInner();
 
   return (

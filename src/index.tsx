@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 
-import { getPyodide } from './fir';
+import { getPyodide } from './scipy';
 import { Root } from './Root';
 import { BassSettingsPage } from './pages/BassSettingsPage';
 import { TopsSettingsPage } from './pages/TopsSettingsPage';

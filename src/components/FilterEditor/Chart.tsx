@@ -1,12 +1,5 @@
 import React, { SyntheticEvent, useRef, useState } from 'react';
-
 import useResizeObserver from 'use-resize-observer';
-import {
-  Filter,
-  filterFnFromDef,
-  freqencyResponse,
-  samplingFrequencies,
-} from '.';
 import {
   SVGCoordinateType,
   VictoryArea,
@@ -17,7 +10,11 @@ import {
   VictoryTheme,
   Selection,
 } from 'victory';
+
 import { roundToDigits } from '@/lib/round';
+import { filterFnFromDef } from '@/iirFilter';
+import { frequencyResponse, samplingFrequencies } from '@/filters';
+import { SwitchableFilterDef } from '.';
 
 export function FilterEditorChart({
   filterDefs,
@@ -27,8 +24,8 @@ export function FilterEditorChart({
   selectedPoint,
   onSelectedPointChange,
 }: {
-  filterDefs: Filter[];
-  setFilterDefs: (newFilterDefs: Filter[]) => void;
+  filterDefs: SwitchableFilterDef[];
+  setFilterDefs: (newFilterDefs: SwitchableFilterDef[]) => void;
   computedGain?: Array<{ x: number; y: number }>;
   computedPhase?: Array<{ x: number; y: number }>;
   selectedPoint: number | null;
@@ -36,7 +33,7 @@ export function FilterEditorChart({
 }) {
   const filters = filterDefs.filter((f) => f.enabled).map(filterFnFromDef);
   const frequencies = samplingFrequencies();
-  const masterReponse = freqencyResponse(filters, frequencies);
+  const masterReponse = frequencyResponse(filters, frequencies);
   const masterMag = zipToXY(
     frequencies,
     masterReponse.map((r) => r.mag),
@@ -54,7 +51,7 @@ export function FilterEditorChart({
     if (selectedFilter) {
       selectedData = zipToXY(
         frequencies,
-        freqencyResponse([selectedFilter], frequencies).map((r) => r.mag),
+        frequencyResponse([selectedFilter], frequencies).map((r) => r.mag),
       );
     }
   }

@@ -1,5 +1,6 @@
 import produce from 'immer';
-import { Filter } from '.';
+
+import { SwitchableFilterDef } from '.';
 import { Field, FieldContent, FieldLabel } from '../ui/field';
 import { Switch } from '../ui/switch';
 import {
@@ -19,9 +20,9 @@ export function FilterEditorKnobs({
   selectedPoint,
   setFilterDefs,
 }: {
-  filterDefs: Filter[];
+  filterDefs: SwitchableFilterDef[];
   selectedPoint: number | null;
-  setFilterDefs: (newFilterDefs: Filter[]) => void;
+  setFilterDefs: (newFilterDefs: SwitchableFilterDef[]) => void;
 }) {
   return (
     <div className="max-w-4xl mx-auto px-4">
@@ -66,7 +67,7 @@ export function FilterEditorKnobs({
 
                 setFilterDefs(
                   produce(filterDefs, (draft) => {
-                    draft[selectedPoint].type = value as Filter['type'];
+                    draft[selectedPoint].type = value as SwitchableFilterDef['type'];
                   }),
                 );
               }}
