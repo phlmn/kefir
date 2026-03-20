@@ -110,42 +110,6 @@ function useGlobalStateInner() {
         migratedChannel.name = `Channel ${index + 1}`;
       }
 
-      // Convert old single-source format to new multi-source format
-      if ('source' in channel && !('sources' in channel)) {
-        migratedChannel = {
-          ...migratedChannel,
-          sources: [
-            {
-              channel: channel.source,
-              gain: channel.gain || 0,
-            },
-          ],
-          inverted: channel.inverted || false,
-          // Remove old properties
-          source: undefined,
-          gain: undefined,
-        };
-      }
-
-      // Convert per-source inversion to per-channel inversion
-      if ('sources' in migratedChannel && migratedChannel.sources) {
-        const hasAnyInvertedSources = migratedChannel.sources.some(
-          (s: any) => s.inverted,
-        );
-        migratedChannel = {
-          ...migratedChannel,
-          sources: migratedChannel.sources.map((s: any) => ({
-            channel: s.channel,
-            gain: s.gain,
-            // Remove per-source inverted property
-          })),
-          inverted:
-            migratedChannel.inverted !== undefined
-              ? migratedChannel.inverted
-              : hasAnyInvertedSources,
-        };
-      }
-
       if (!migratedChannel.iirFilters) {
         migratedChannel = {
           ...migratedChannel,
@@ -216,16 +180,16 @@ function useGlobalStateInner() {
     // );
     // setComputedFilterTops(topsFilter);
 
-    // const updatedChannelSettings = channelSettings.map(
-    //   (settings: ChannelSettingsType, index: number) => ({
-    //     ...settings,
-    //     firTaps: index < 2 ? topsFilter.taps : index < 4 ? bassFilter.taps : [],
-    //   }),
-    // );
+    const updatedChannelSettings = channelSettings.map(
+      (settings: ChannelSettingsType, index: number) => ({
+        ...settings,
+        // firTaps: index < 2 ? topsFilter.taps : index < 4 ? bassFilter.taps : [],
+      }),
+    );
 
     const config = buildConfig(
       Array(8).fill({ gain: 0 }),
-      channelSettings,
+      updatedChannelSettings,
     );
 
     await sendConfig(config);

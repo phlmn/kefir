@@ -23,7 +23,11 @@ export function FilterEditorKnobs({
   filterDefs: SwitchableFilterDef[];
   selectedPoint: number | null;
   setFilterDefs: (newFilterDefs: SwitchableFilterDef[]) => void;
-}) {
+  }) {
+  if (selectedPoint != null && !filterDefs[selectedPoint]) {
+    selectedPoint = null;
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4">
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

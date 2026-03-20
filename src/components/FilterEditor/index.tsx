@@ -18,7 +18,7 @@ export function FilterEditor({
   computedPhase?: Array<{ x: number; y: number }>;
   selectedPoint: number | null;
   onSelectedPointChange: (point: number | null) => void;
-}) {
+  }) {
   return (
     <div>
       <FilterEditorChart

@@ -1,6 +1,8 @@
 import { FilterEditor } from '@/components/FilterEditor';
 import { NumberInput } from '@/components/NumberInput';
+import { RoundCheckbox } from '@/components/RoundCheckbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
 import {
@@ -41,30 +43,55 @@ export function OutputChannelPage() {
 
   return (
     <div className="space-y-5">
-      <div className="space-y-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 mb-2">{settings.name}</h4>
-          {settings.sources && settings.sources.length > 0 ? (
-            <div className="space-y-2">
-              {settings.sources.map((source, index) => (
-                <div key={index} className="text-sm text-blue-800">
-                  Input {source.channel + 1}: {source.gain.toFixed(1)} dB
-                </div>
+      <Card>
+        <CardHeader>Inputs</CardHeader>
+        <CardContent className="flex gap-8">
+          <div className="space-y-1">
+            {[...new Array(4)]
+              .map((_, i) => i)
+              .map((ch) => (
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id={`checkbox-inputs-channel-${ch}`}
+                    checked={settings.sources.includes(ch)}
+                    onCheckedChange={(checked) =>
+                      updateSettings({
+                        sources: checked
+                          ? [...settings.sources, ch]
+                          : settings.sources.filter((a) => a !== ch),
+                      })
+                    }
+                  />
+                  <FieldLabel htmlFor={`checkbox-inputs-channel-${ch}`}>
+                    Channel {ch + 1}
+                  </FieldLabel>
+                </Field>
               ))}
-              {settings.inverted && (
-                <div className="text-sm text-orange-700 font-medium">
-                  Channel Inverted
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-sm text-blue-700">No inputs connected</div>
-          )}
-          <div className="text-xs text-blue-600 mt-2">
-            Use the Routing tab to configure input sources
           </div>
-        </div>
-      </div>
+          <div className="space-y-1">
+            {[...new Array(4)]
+              .map((_, i) => i + 4)
+              .map((ch) => (
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id={`checkbox-inputs-channel-${ch}`}
+                    checked={settings.sources.includes(ch)}
+                    onCheckedChange={(checked) =>
+                      updateSettings({
+                        sources: checked
+                          ? [...settings.sources, ch]
+                          : settings.sources.filter((a) => a !== ch),
+                      })
+                    }
+                  />
+                  <FieldLabel htmlFor={`checkbox-inputs-channel-${ch}`}>
+                    Channel {ch + 1}
+                  </FieldLabel>
+                </Field>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>IIR Filter</CardHeader>
@@ -84,9 +111,6 @@ export function OutputChannelPage() {
 
       <GeneralSettings settings={settings} onChange={updateSettings} />
       <LimiterSettings settings={settings.limiter} onChange={updateLimiter} />
-
-      {/* Additional space for future settings */}
-      <div>{/* Reserved for future settings */}</div>
     </div>
   );
 }

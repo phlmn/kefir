@@ -30,7 +30,11 @@ export function FilterEditorChart({
   computedPhase?: Array<{ x: number; y: number }>;
   selectedPoint: number | null;
   onSelectedPointChange: (point: number | null) => void;
-}) {
+  }) {
+  if (selectedPoint != null && !filterDefs[selectedPoint]) {
+    selectedPoint = null;
+  }
+
   const filters = filterDefs.filter((f) => f.enabled).map(filterFnFromDef);
   const frequencies = samplingFrequencies();
   const masterReponse = frequencyResponse(filters, frequencies);

@@ -12,10 +12,7 @@ export type SpeakerParams = {
 export type ChannelSettings = {
   name: string;
   delayInMs: number;
-  sources: {
-    channel: number;
-    gain: number;
-  }[];
+  sources: number[];
   inverted: boolean;
   limiter: {
     enabled: boolean;
@@ -96,13 +93,13 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
 
   // Pipelines
   const pipelines = [];
-  filters.forEach((filter) => {
+  if (filters.length > 0) {
     pipelines.push({
       type: 'Filter',
       channel: channel,
-      names: [filter.name],
+      names: filters.map(f => f.name),
     });
-  });
+  }
 
   return {
     inverted: settings.inverted,
@@ -142,10 +139,11 @@ export function buildConfig(
         },
         mapping: channels.map((c, index) => ({
           dest: index,
-          sources: c.sources.map((source) => ({
-            ...source,
-            inverted: c.inverted, // Apply channel-level inversion to all sources
-          })),
+          sources: c.sources
+            .map(source => ({
+              channel: source,
+              inverted: c.inverted, // Apply channel-level inversion to all sources
+            })),
         })),
       },
     },

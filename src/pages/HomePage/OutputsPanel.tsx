@@ -55,7 +55,7 @@ export function ChannelsStatus({
                   Inputs:{' '}
                   {settings.sources.length === 0
                     ? 'None'
-                    : settings.sources.map((s) => s.channel + 1).join(', ')}
+                    : settings.sources.toSorted().map((s) => s + 1).join(', ')}
                 </div>
                 <div>Delay: {settings.delayInMs.toFixed(1)} ms</div>
                 {settings.inverted && (
