@@ -3,6 +3,7 @@ import { NumberInput } from '@/components/NumberInput';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ChannelSettings } from '@/config';
@@ -33,6 +34,15 @@ export function OutputChannelPage() {
   return (
     <div className="space-y-5 pb-5">
       <div className="flex gap-5">
+        <Card>
+          <CardContent className="flex pt-8">
+            <Field>
+              <FieldLabel>Channel Name</FieldLabel>
+              <Input value={settings.name} onChange={(event) => updateSettings({ name: event.currentTarget.value })} />
+            </Field>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Inputs</CardTitle>
