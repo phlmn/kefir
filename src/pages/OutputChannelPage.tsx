@@ -1,20 +1,25 @@
 import { FilterEditor } from '@/components/FilterEditor';
 import { NumberInput } from '@/components/NumberInput';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ChannelSettings } from '@/config';
+import { ChannelSettings, hasLink, LinkSettings } from '@/config';
+import { cn } from '@/lib/utils';
 import { useGlobalState } from '@/state';
+import produce from 'immer';
+import { Link2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 
 export function OutputChannelPage() {
   const params = useParams();
   const channel = parseInt(params.channel || '1') - 1;
-  const { channelSettings, setChannelSettings } = useGlobalState();
+  const { channelSettings, setChannelSettings, linkSettings, setLinkSettings } =
+    useGlobalState();
   const [selectedFilter, setSelectedFilter] = useState<number | null>(null);
 
   const settings = channelSettings[channel];
@@ -38,7 +43,12 @@ export function OutputChannelPage() {
           <CardContent className="flex pt-8">
             <Field>
               <FieldLabel>Channel Name</FieldLabel>
-              <Input value={settings.name} onChange={(event) => updateSettings({ name: event.currentTarget.value })} />
+              <Input
+                value={settings.name}
+                onChange={(event) =>
+                  updateSettings({ name: event.currentTarget.value })
+                }
+              />
             </Field>
           </CardContent>
         </Card>
@@ -95,12 +105,18 @@ export function OutputChannelPage() {
           </CardContent>
         </Card>
 
-        <GeneralSettings settings={settings} onChange={updateSettings} />
+        <GeneralSettings
+          channel={channel}
+          settings={settings}
+          onChange={updateSettings}
+        />
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>IIR Filter</CardTitle>
+        <CardHeader className="flex-row justify-between">
+          <CardTitle>
+            IIR Filter <LinkButton channel={channel} linkType="iirFilters" />
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <FilterEditor
@@ -116,22 +132,30 @@ export function OutputChannelPage() {
         </CardContent>
       </Card>
 
-      <LimiterSettings settings={settings.limiter} onChange={updateLimiter} />
+      <LimiterSettings
+        channel={channel}
+        settings={settings.limiter}
+        onChange={updateLimiter}
+      />
     </div>
   );
 }
 
 function LimiterSettings({
+  channel,
   settings,
   onChange,
 }: {
+  channel: number;
   settings: ChannelSettings['limiter'];
   onChange: (updates: Partial<ChannelSettings['limiter']>) => void;
 }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Limiter</CardTitle>
+        <CardTitle>
+          Limiter <LinkButton channel={channel} linkType="limiter" />
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Label>
@@ -176,9 +200,11 @@ function LimiterSettings({
 }
 
 function GeneralSettings({
+  channel,
   settings,
   onChange,
 }: {
+  channel: number;
   settings: ChannelSettings;
   onChange: (updates: Partial<ChannelSettings>) => void;
 }) {
@@ -195,7 +221,9 @@ function GeneralSettings({
           />
         </Field>
         <Field orientation="horizontal">
-          <FieldLabel className="w-32">Gain (dB)</FieldLabel>
+          <FieldLabel className="w-32">
+            Gain (dB) <LinkButton channel={channel} linkType="gain" />
+          </FieldLabel>
           <NumberInput
             value={settings.gain}
             onChange={(value) => onChange({ gain: value })}
@@ -206,7 +234,9 @@ function GeneralSettings({
           />
         </Field>
         <Field orientation="horizontal">
-          <FieldLabel className="w-32">Delay (ms)</FieldLabel>
+          <FieldLabel className="w-32">
+            Delay (ms) <LinkButton channel={channel} linkType="delay" />
+          </FieldLabel>
           <NumberInput
             value={settings.delayInMs}
             onChange={(value) => onChange({ delayInMs: value })}
@@ -218,5 +248,47 @@ function GeneralSettings({
         </Field>
       </CardContent>
     </Card>
+  );
+}
+
+function LinkButton({
+  channel,
+  linkType,
+}: {
+  channel: number;
+  linkType: keyof LinkSettings;
+}) {
+  const { linkSettings, setLinkSettings } = useGlobalState();
+  const isLinked = hasLink(linkSettings, channel, linkType);
+
+  return (
+    <Button
+      title={isLinked ? 'Remove link' : 'Use values from neighbor channel'}
+      size="iconSm"
+      variant="ghost"
+      className={cn('align-middle mb-0.5 ml-0.5', !isLinked && 'opacity-40')}
+      onClick={() => {
+        if (isLinked) {
+          setLinkSettings(
+            produce(linkSettings, (linkSettings) => {
+              linkSettings[linkType] = linkSettings[linkType].filter(
+                (l) => l.from !== channel && l.to !== channel,
+              );
+            }),
+          );
+        } else {
+          setLinkSettings(
+            produce(linkSettings, (linkSettings) => {
+              linkSettings[linkType].push({
+                from: channel % 2 == 0 ? channel + 1 : channel - 1,
+                to: channel,
+              });
+            }),
+          );
+        }
+      }}
+    >
+      <Link2Icon />
+    </Button>
   );
 }

@@ -1,13 +1,7 @@
+import produce from 'immer';
 import { SwitchableFilterDef } from './components/FilterEditor';
 import { coeffParams, coeffsFromDef } from './iirFilter';
 import { send } from './ws';
-
-export type SpeakerParams = {
-  firTaps: number[];
-  limiterThreshold: number;
-  limiterRmsSamples: number;
-  limiterDecay: number;
-};
 
 export type ChannelSettings = {
   name: string;
@@ -93,7 +87,7 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
     filters.push({
       name: filterName('limiter'),
       config: {
-        type: 'Limiter',
+        type: 'RmsLimiter',
         parameters: {
           threshold: settings.limiter.threshold,
           rms_samples: settings.limiter.rmsSamples,
@@ -109,7 +103,7 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
     pipelines.push({
       type: 'Filter',
       channel: channel,
-      names: filters.map(f => f.name),
+      names: filters.map((f) => f.name),
     });
   }
 
@@ -120,9 +114,48 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
   };
 }
 
+export type Link = { from: number; to: number };
+export type LinkSettings = {
+  delay: Link[];
+  gain: Link[];
+  limiter: Link[];
+  iirFilters: Link[];
+};
+
+export function hasLink(
+  linkSettings: LinkSettings,
+  channel: number,
+  type: keyof LinkSettings,
+) {
+  return linkSettings[type].some(
+    ({ from, to }) => from === channel || to === channel,
+  );
+}
+
+function resolveLinks(channels: ChannelSettings[], links: LinkSettings) {
+  return produce(channels, (channels) => {
+    links.delay.forEach(({ from, to }) => {
+      channels[to].delayInMs = channels[from].delayInMs;
+    });
+
+    links.gain.forEach(({ from, to }) => {
+      channels[to].gain = channels[from].gain;
+    });
+
+    links.limiter.forEach(({ from, to }) => {
+      channels[to].limiter = channels[from].limiter;
+    });
+
+    links.iirFilters.forEach(({ from, to }) => {
+      channels[to].iirFilters = channels[from].iirFilters;
+    });
+  });
+}
+
 export function buildConfig(
   inChannels: InputSettings[],
   channels: ChannelSettings[],
+  linkSettings: LinkSettings,
 ) {
   const config = {
     devices: {
@@ -151,10 +184,9 @@ export function buildConfig(
         },
         mapping: channels.map((c, index) => ({
           dest: index,
-          sources: c.sources
-            .map(source => ({
-              channel: source,
-            })),
+          sources: c.sources.map((source) => ({
+            channel: source,
+          })),
         })),
       },
     },
@@ -165,6 +197,8 @@ export function buildConfig(
       },
     ],
   };
+
+  channels = resolveLinks(channels, linkSettings);
 
   channels.forEach((channel, index) => {
     // Only include channels that have sources (implicit activation)

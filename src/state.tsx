@@ -4,6 +4,7 @@ import {
   sendConfig,
   ChannelSettings as ChannelSettingsType,
   buildConfig,
+  LinkSettings,
 } from './config';
 import { send, ws } from './ws';
 import { calculateFirFilter, ComputedFirFilter } from './firFilter';
@@ -152,6 +153,11 @@ function useGlobalStateInner() {
     setChannelSettingsRaw(newSettings);
   };
 
+  const [linkSettings, setLinkSettings] = useLocalStorage<LinkSettings>(
+    'linkSettings',
+    { delay: [], gain: [], iirFilters: [], limiter: [] },
+  );
+
   const [computedFilterBass, setComputedFilterBass] = useState(
     undefined as undefined | ComputedFirFilter,
   );
@@ -191,6 +197,7 @@ function useGlobalStateInner() {
     const config = buildConfig(
       Array(8).fill({ gain: 0 }),
       updatedChannelSettings,
+      linkSettings,
     );
 
     await sendConfig(config);
@@ -199,6 +206,9 @@ function useGlobalStateInner() {
   return {
     calculate,
     channelSettings,
+    setChannelSettings,
+    linkSettings,
+    setLinkSettings,
     computedFilterBass,
     computedFilterTops,
     setBassFilters,
@@ -209,7 +219,6 @@ function useGlobalStateInner() {
     houseFilters,
     captureSignalsPeak,
     captureSignalsRms,
-    setChannelSettings,
     playbackSignalsRms,
     playbackSignalsPeak,
     isConnected,
