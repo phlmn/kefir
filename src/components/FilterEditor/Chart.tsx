@@ -212,7 +212,7 @@ export function FilterEditorChart({
         domain={{ x: [20, 20000], y: [-1, 1] }}
       >
         <VictoryAxis
-          label="Gain (db)"
+          label="Gain (dB)"
           dependentAxis
           tickValues={[-1, -0.5, 0, 0.5, 1]}
           tickFormat={[-20, -10, 0, 10, 20]}

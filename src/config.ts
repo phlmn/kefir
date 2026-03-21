@@ -14,6 +14,7 @@ export type ChannelSettings = {
   delayInMs: number;
   sources: number[];
   inverted: boolean;
+  gain: number;
   limiter: {
     enabled: boolean;
     threshold: number;
@@ -32,6 +33,17 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
   const filters = [];
 
   const filterName = (name: string) => `ch${channel}_${name}`;
+
+  filters.push({
+    name: filterName('gain'),
+    config: {
+      type: 'Gain',
+      parameters: {
+        gain: settings.gain,
+        inverted: settings.inverted,
+      },
+    },
+  });
 
   filters.push({
     name: filterName('delay'),
@@ -142,7 +154,6 @@ export function buildConfig(
           sources: c.sources
             .map(source => ({
               channel: source,
-              inverted: c.inverted, // Apply channel-level inversion to all sources
             })),
         })),
       },

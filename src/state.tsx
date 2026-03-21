@@ -85,6 +85,7 @@ function useGlobalStateInner() {
     delayInMs: 0,
     sources: [], // Start with no inputs connected (inactive)
     inverted: false,
+    gain: 0,
     limiter: {
       enabled: true,
       threshold: 0,

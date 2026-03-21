@@ -34,7 +34,7 @@ export function LimiterSettings({
         />{' '}
         Enabled
       </label>
-      <FormField label="Limiter Threshold (db)">
+      <FormField label="Limiter Threshold (dB)">
         <NumberInput
           value={settings.threshold}
           onChange={(value) => onChange({ threshold: value })}
@@ -43,7 +43,7 @@ export function LimiterSettings({
         />
       </FormField>
 
-      <FormField label="Limiter Decay (db/s)">
+      <FormField label="Limiter Decay (dB/s)">
         <NumberInput
           value={settings.decay}
           onChange={(value) => onChange({ decay: value })}
