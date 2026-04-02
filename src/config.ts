@@ -87,7 +87,7 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
     filters.push({
       name: filterName('limiter'),
       config: {
-        type: 'RmsLimiter',
+        type: 'Limiter',
         parameters: {
           threshold: settings.limiter.threshold,
           rms_samples: settings.limiter.rmsSamples,
