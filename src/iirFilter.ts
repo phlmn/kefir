@@ -97,9 +97,20 @@ export function allpassCoeffs({
 }) {
   const omega = (2 * Math.PI * frequency) / FS;
   const alpha = Math.sin(omega) / (2 * q);
+
+  const a0 = 1 + alpha;
+  const a1 = -2 * Math.cos(omega);
+  const a2 = 1 - alpha;
+
+  const b0 = 1 - alpha;
+  const b1 = -2 * Math.cos(omega);
+  const b2 = 1 + alpha;
+
+  const norm = 1 / a0;
+
   const coeffs: FilterConfig = {
-    zeroes: [1 + alpha, -2 * Math.cos(omega), 1 - alpha],
-    poles: [1 - alpha, -2 * Math.cos(omega), 1 + alpha],
+    poles: [1, a1 * norm, a2 * norm],
+    zeroes: [b0 * norm, b1 * norm, b2 * norm],
   };
 
   return coeffs;
@@ -156,6 +167,10 @@ export function filterFnFromDef(def: FilterDef) {
 }
 
 export function coeffParams(filter: FilterConfig) {
+  if (filter.poles[0] !== 1) {
+    throw new Error("biquad filter must be normalized");
+  }
+
   // should be the reverse of this code, but a and b are swapped:
   // {
   //   zeroes: [this._a0, this._a1, this._a2],
