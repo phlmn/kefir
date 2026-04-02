@@ -57,7 +57,11 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton
+                  onClick={() => {
+                    navigate(`/`);
+                  }}
+                >
                   <ChartSplineIcon />
                   <span>Overview</span>
                 </SidebarMenuButton>
@@ -91,7 +95,7 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
                   disabled: channel.sources.length === 0,
                   onClick: () => {
                     navigate(`/outputs/${index + 1}`);
-                  }
+                  },
                 }))}
               />
               <CollapsibleMenuItem
@@ -184,9 +188,7 @@ function CollapsibleMenuItem({
                 className="bg-neutral-700/60 hover:bg-neutral-700 gap-1 [&>svg]:w-3.5 h-6 mt-1"
               >
                 <PlusIcon />
-                <span className="block grow text-center -ml-5">
-                  Add Group
-                </span>
+                <span className="block grow text-center -ml-5">Add Group</span>
               </SidebarMenuSubButton>
             </SidebarMenuSubItem>
           </SidebarMenuSub>
