@@ -98,20 +98,6 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
                   },
                 }))}
               />
-              <CollapsibleMenuItem
-                item={{
-                  label: 'Groups',
-                  icon: GroupIcon,
-                }}
-                subItems={[
-                  {
-                    label: 'Tops',
-                  },
-                  {
-                    label: 'Subs',
-                  },
-                ]}
-              />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -182,15 +168,6 @@ function CollapsibleMenuItem({
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             ))}
-            <SidebarMenuSubItem>
-              <SidebarMenuSubButton
-                size="sm"
-                className="bg-neutral-700/60 hover:bg-neutral-700 gap-1 [&>svg]:w-3.5 h-6 mt-1"
-              >
-                <PlusIcon />
-                <span className="block grow text-center -ml-5">Add Group</span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
           </SidebarMenuSub>
         </CollapsibleContent>
       </SidebarMenuItem>
