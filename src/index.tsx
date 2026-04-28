@@ -8,6 +8,8 @@ import { HouseCurvePage } from './pages/HouseCurvePage';
 import { GlobalStateProvider } from './state';
 import { HomePage } from './pages/HomePage';
 import { OutputChannelPage } from './pages/OutputChannelPage';
+import { LoudspeakerPresetsPage } from './pages/LoudspeakerPresetsPage';
+import { SystemPresetsPage } from './pages/SystemPresetsPage';
 
 // preload pyodide
 getPyodide();
@@ -32,6 +34,14 @@ let router = createBrowserRouter([
       {
         path: '/housecurve',
         Component: HouseCurvePage,
+      },
+      {
+        path: '/presets/loudspeaker',
+        Component: LoudspeakerPresetsPage,
+      },
+      {
+        path: '/presets/system',
+        Component: SystemPresetsPage,
       },
     ],
   },

@@ -92,13 +92,17 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton onClick={() => {
+                  navigate("/presets/loudspeaker");
+                }}>
                   <SpeakerIcon />
                   <span>Loudspeaker</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton onClick={() => {
+                  navigate("/presets/system");
+                }}>
                   <GroupIcon />
                   <span>System</span>
                 </SidebarMenuButton>

@@ -11,19 +11,8 @@ import { calculateFirFilter, ComputedFirFilter } from './firFilter';
 import { SwitchableFilterDef } from './components/FilterEditor';
 
 function useGlobalStateInner() {
-  const ntaps = 4800;
-  const fs = 48000;
-
   const [houseFilters, setHouseFilters] = useLocalStorage(
     'houseFilters',
-    [] as SwitchableFilterDef[],
-  );
-  const [bassFilters, setBassFilters] = useLocalStorage(
-    'bassFilters',
-    [] as SwitchableFilterDef[],
-  );
-  const [topsFilters, setTopsFilters] = useLocalStorage(
-    'topsFilters',
     [] as SwitchableFilterDef[],
   );
 
@@ -37,8 +26,6 @@ function useGlobalStateInner() {
 
   const [captureSignalsRms, setCaptureSignalsRms] = useState<number[]>([]);
   const [captureSignalsPeak, setCaptureSignalsPeak] = useState<number[]>([]);
-
-  const [isMinimumPhase, setMinimumPhase] = useState(true);
 
   const [isConnected, setIsConnected] = useState(false);
   useEffect(() => {
@@ -166,31 +153,9 @@ function useGlobalStateInner() {
   );
 
   const calculate = async () => {
-    // const bassFilter = await calculateFirFilter(
-    //   [
-    //     ...(bypassHouseCurve ? [] : houseFilters.filter((f) => f.enabled)),
-    //     ...bassFilters.filter((f) => f.enabled),
-    //   ],
-    //   fs,
-    //   ntaps,
-    //   isMinimumPhase,
-    // );
-    // setComputedFilterBass(bassFilter);
-    // const topsFilter = await calculateFirFilter(
-    //   [
-    //     ...(bypassHouseCurve ? [] : houseFilters.filter((f) => f.enabled)),
-    //     ...topsFilters.filter((f) => f.enabled),
-    //   ],
-    //   fs,
-    //   ntaps,
-    //   isMinimumPhase,
-    // );
-    // setComputedFilterTops(topsFilter);
-
     const updatedChannelSettings = channelSettings.map(
       (settings: ChannelSettingsType, index: number) => ({
         ...settings,
-        // firTaps: index < 2 ? topsFilter.taps : index < 4 ? bassFilter.taps : [],
       }),
     );
 
@@ -203,6 +168,19 @@ function useGlobalStateInner() {
     await sendConfig(config);
   };
 
+  const [loudspeakerPresets, setLoudspeakerPresets] = useLocalStorage<
+    LoudspeakerPreset[]
+  >('loudspeakerPresets', []);
+
+  const [systemPresets, setSystemPresets] = useLocalStorage<SystemPreset[]>(
+    'systemPresets',
+    [],
+  );
+
+  const [currentSystemPreset, setCurrentSystemPreset] = useLocalStorage<
+    string | undefined
+  >('currentSystemPreset', undefined);
+
   return {
     calculate,
     channelSettings,
@@ -211,11 +189,7 @@ function useGlobalStateInner() {
     setLinkSettings,
     computedFilterBass,
     computedFilterTops,
-    setBassFilters,
-    setTopsFilters,
     setHouseFilters,
-    bassFilters,
-    topsFilters,
     houseFilters,
     captureSignalsPeak,
     captureSignalsRms,
@@ -225,8 +199,26 @@ function useGlobalStateInner() {
     sendConfig,
     bypassHouseCurve,
     setBypassHouseCurve,
+    loudspeakerPresets,
+    setLoudspeakerPresets,
+    systemPresets,
+    setSystemPresets,
+    currentSystemPreset,
+    setCurrentSystemPreset,
   };
 }
+
+export type LoudspeakerPreset = {
+  name: string;
+  settings: Partial<ChannelSettingsType>;
+};
+
+export type SystemPreset = {
+  name: string;
+  channelSettings: ChannelSettingsType[];
+  houseFilters: SwitchableFilterDef[];
+  linkSettings: LinkSettings;
+};
 
 export const GlobalStateContext = createContext<ReturnType<
   typeof useGlobalStateInner
