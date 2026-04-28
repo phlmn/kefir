@@ -163,6 +163,7 @@ function useGlobalStateInner() {
       Array(8).fill({ gain: 0 }),
       updatedChannelSettings,
       linkSettings,
+      bypassHouseCurve ? [] : houseFilters,
     );
 
     await sendConfig(config);

@@ -66,7 +66,11 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton
+                  onClick={() => {
+                    navigate(`/housecurve`);
+                  }}
+                >
                   <ChartSplineIcon />
                   <span>House Curve</span>
                 </SidebarMenuButton>
@@ -92,17 +96,21 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => {
-                  navigate("/presets/loudspeaker");
-                }}>
+                <SidebarMenuButton
+                  onClick={() => {
+                    navigate('/presets/loudspeaker');
+                  }}
+                >
                   <SpeakerIcon />
                   <span>Loudspeaker</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => {
-                  navigate("/presets/system");
-                }}>
+                <SidebarMenuButton
+                  onClick={() => {
+                    navigate('/presets/system');
+                  }}
+                >
                   <GroupIcon />
                   <span>System</span>
                 </SidebarMenuButton>

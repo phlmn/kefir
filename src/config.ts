@@ -23,7 +23,7 @@ export type InputSettings = {
   gain: number;
 };
 
-function createChannelConfig(channel: number, settings: ChannelSettings) {
+function createChannelConfig(channel: number, settings: ChannelSettings, houseFilters: SwitchableFilterDef[]) {
   const filters = [];
 
   const filterName = (name: string) => `ch${channel}_${name}`;
@@ -72,6 +72,25 @@ function createChannelConfig(channel: number, settings: ChannelSettings) {
       coeffs.forEach((c, i) => {
         filters.push({
           name: filterName(`iir_${filterIdx}_${i}`),
+          config: {
+            type: 'Biquad',
+            parameters: {
+              type: 'Free',
+              ...coeffParams(c),
+            },
+          },
+        });
+      });
+    });
+
+  houseFilters
+    .filter((f) => f.enabled)
+    .forEach((filter, filterIdx) => {
+      const coeffs = coeffsFromDef(filter);
+
+      coeffs.forEach((c, i) => {
+        filters.push({
+          name: filterName(`iir_house_${filterIdx}_${i}`),
           config: {
             type: 'Biquad',
             parameters: {
@@ -156,6 +175,7 @@ export function buildConfig(
   inChannels: InputSettings[],
   channels: ChannelSettings[],
   linkSettings: LinkSettings,
+  houseFilters: SwitchableFilterDef[],
 ) {
   const config = {
     devices: {
@@ -203,7 +223,7 @@ export function buildConfig(
   channels.forEach((channel, index) => {
     // Only include channels that have sources (implicit activation)
     if (channel.sources && channel.sources.length > 0) {
-      const channelConfig = createChannelConfig(index, channel);
+      const channelConfig = createChannelConfig(index, channel, houseFilters);
 
       channelConfig.filters.forEach((filter) => {
         config.filters[filter.name] = filter.config;
