@@ -3,10 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 
 import { getPyodide } from './scipy';
 import { Root } from './Root';
-import { BassSettingsPage } from './pages/BassSettingsPage';
-import { TopsSettingsPage } from './pages/TopsSettingsPage';
 import { InputsPage } from './pages/InputsPage';
-import { RoutingPage } from './pages/RoutingPage';
 import { HouseCurvePage } from './pages/HouseCurvePage';
 import { GlobalStateProvider } from './state';
 import { HomePage } from './pages/HomePage';
@@ -25,14 +22,6 @@ let router = createBrowserRouter([
         Component: HomePage,
       },
       {
-        path: '/bass',
-        Component: BassSettingsPage,
-      },
-      {
-        path: '/tops',
-        Component: TopsSettingsPage,
-      },
-      {
         path: '/inputs',
         Component: InputsPage,
       },
@@ -41,8 +30,8 @@ let router = createBrowserRouter([
         Component: OutputChannelPage,
       },
       {
-        path: '/routing',
-        Component: RoutingPage,
+        path: '/housecurve',
+        Component: HouseCurvePage,
       },
     ],
   },

@@ -17,8 +17,7 @@ import {
   ChartSplineIcon,
   ChevronRight,
   GroupIcon,
-  PlusIcon,
-  Speaker,
+  HomeIcon,
   SpeakerIcon,
 } from 'lucide-react';
 
@@ -53,7 +52,7 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Mixing</SidebarGroupLabel>
+          <SidebarGroupLabel>DSP</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -62,20 +61,7 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
                     navigate(`/`);
                   }}
                 >
-                  <ChartSplineIcon />
-                  <span>Overview</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>DSP</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <ChartSplineIcon />
+                  <HomeIcon />
                   <span>Overview</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -105,18 +91,18 @@ export function AppSidebar({ isConnected }: { isConnected: boolean }) {
           <SidebarGroupLabel>Presets</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <CollapsibleMenuItem
-                item={{
-                  label: 'Loudspeakers',
-                  icon: Speaker,
-                }}
-              />
-              <CollapsibleMenuItem
-                item={{
-                  label: 'System',
-                  icon: GroupIcon,
-                }}
-              />
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <SpeakerIcon />
+                  <span>Loudspeaker</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <GroupIcon />
+                  <span>System</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
