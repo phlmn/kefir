@@ -14,7 +14,7 @@ async fn main() {
     }));
 
     let app = Router::new()
-        .route("/config", get(get_config).post(post_config))
+        .route("/api/config", get(get_config).post(post_config))
         .route_service(
             "/{*path}",
             ServeDir::new("./public").fallback(ServeFile::new("./public/index.html")),
