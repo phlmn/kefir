@@ -1,0 +1,11 @@
+FROM rust:alpine
+
+RUN apk add --no-cache \
+    build-base \
+    gettext-dev \
+    linux-headers \
+    pkgconf \
+    wget \
+    ca-certificates
+
+WORKDIR /volume
