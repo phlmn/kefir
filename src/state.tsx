@@ -1,27 +1,31 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useRemoteState } from './useLocalStorage';
 import {
   sendConfig,
   ChannelSettings as ChannelSettingsType,
   buildConfig,
   LinkSettings,
+  saveConfig,
 } from './config';
 import { send, ws } from './ws';
 import { calculateFirFilter, ComputedFirFilter } from './firFilter';
 import { SwitchableFilterDef } from './components/FilterEditor';
 
-function useGlobalStateInner() {
-  const [houseFilters, setHouseFilters] = useLocalStorage(
+function useGlobalStateInner(config: any) {
+  const [houseFilters, setHouseFilters] = useRemoteState(
+    config,
     'houseFilters',
     [] as SwitchableFilterDef[],
   );
 
-  const [bypassHouseCurve, setBypassHouseCurve] = useLocalStorage(
+  const [bypassHouseCurve, setBypassHouseCurve] = useRemoteState(
+    config,
     'bypassHouseCurve',
     false,
   );
 
-  const [bypassChannelFilters, setBypassChannelFilters] = useLocalStorage(
+  const [bypassChannelFilters, setBypassChannelFilters] = useRemoteState(
+    config,
     'bypassChannelFilters',
     false,
   );
@@ -122,9 +126,10 @@ function useGlobalStateInner() {
     return migrated;
   };
 
-  const [channelSettingsRaw, setChannelSettingsRaw] = useLocalStorage<
+  const [channelSettingsRaw, setChannelSettingsRaw] = useRemoteState<
     ChannelSettingsType[]
   >(
+    config,
     'channelSettings',
     Array(10)
       .fill(null)
@@ -145,7 +150,8 @@ function useGlobalStateInner() {
     setChannelSettingsRaw(newSettings);
   };
 
-  const [linkSettings, setLinkSettings] = useLocalStorage<LinkSettings>(
+  const [linkSettings, setLinkSettings] = useRemoteState<LinkSettings>(
+    config,
     'linkSettings',
     { delay: [], gain: [], iirFilters: [], limiter: [] },
   );
@@ -173,21 +179,33 @@ function useGlobalStateInner() {
       bypassHouseCurve ? [] : houseFilters,
     );
 
+    await sendSettingsToBackend({
+      linkSettings,
+      systemPresets,
+      currentSystemPreset,
+      channelSettings: channelSettingsRaw,
+      houseFilters,
+      bypassChannelFilters,
+      bypassHouseCurve,
+      loudspeakerPresets,
+    });
     await sendConfig(config);
+    await saveConfig();
   };
 
-  const [loudspeakerPresets, setLoudspeakerPresets] = useLocalStorage<
+  const [loudspeakerPresets, setLoudspeakerPresets] = useRemoteState<
     LoudspeakerPreset[]
-  >('loudspeakerPresets', []);
+  >(config, 'loudspeakerPresets', []);
 
-  const [systemPresets, setSystemPresets] = useLocalStorage<SystemPreset[]>(
+  const [systemPresets, setSystemPresets] = useRemoteState<SystemPreset[]>(
+    config,
     'systemPresets',
     [],
   );
 
-  const [currentSystemPreset, setCurrentSystemPreset] = useLocalStorage<
+  const [currentSystemPreset, setCurrentSystemPreset] = useRemoteState<
     string | undefined
-  >('currentSystemPreset', undefined);
+  >(config, 'currentSystemPreset', undefined);
 
   return {
     calculate,
@@ -239,7 +257,33 @@ export const GlobalStateProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const globalState = useGlobalStateInner();
+  const [config, setConfig] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((res) => Promise.all([res, res.json()]))
+      .then(([res, fetchedConfig]) => {
+        if (res.ok) {
+          setConfig(fetchedConfig);
+        }
+      });
+  }, []);
+
+  if (!config) {
+    return <p>Loading...</p>;
+  }
+
+  return <InnerProvider config={config}>{children}</InnerProvider>;
+};
+
+const InnerProvider = ({
+  children,
+  config,
+}: {
+  children: React.ReactNode;
+  config: any;
+}) => {
+  const globalState = useGlobalStateInner(config);
 
   return (
     <GlobalStateContext.Provider value={globalState}>
@@ -257,3 +301,14 @@ export const useGlobalState = () => {
 
   return context;
 };
+
+
+async function sendSettingsToBackend(settings: any) {
+  await fetch("/api/config", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(settings)
+  });
+}

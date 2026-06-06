@@ -62,10 +62,6 @@ export function Root() {
                 </Label>
               </PopoverContent>
             </Popover>
-            <Button variant="secondary" size="sm" onClick={saveConfig}>
-              <Save className="h-4 w-4" />
-              Store Config
-            </Button>
             <Button size="sm" onClick={calculate}>
               <Radio className="h-4 w-4" />
               Apply

@@ -41,3 +41,10 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
 
   return [storedValue, setValue];
 }
+
+
+
+export function useRemoteState<T>(config: any, key: string, initialValue: T): [T, (value: T) => void] {
+  const fromConfig = config[key];
+  return useState(fromConfig !== undefined ? fromConfig : initialValue);
+}

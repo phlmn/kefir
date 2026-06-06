@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run pyodide:fetch && tsc && vite build",
+    "build": "npm run pyodide:fetch && vite build",
     "preview": "vite preview",
     "format": "prettier --write src/",
     "pyodide:fetch": "node scripts/prepare-pyodide.js"

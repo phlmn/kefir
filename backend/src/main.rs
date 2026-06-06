@@ -19,6 +19,10 @@ async fn main() {
             "/{*path}",
             ServeDir::new("./public").fallback(ServeFile::new("./public/index.html")),
         )
+        .route_service(
+            "/",
+            ServeFile::new("./public/index.html"),
+        )
         .with_state(cache_state);
 
     let host = env::var("KEFIR_HOST").unwrap_or("127.0.0.1".to_string());

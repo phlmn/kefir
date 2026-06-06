@@ -1,7 +1,8 @@
 import ReconnectingWebSocket from 'reconnecting-websocket';
 
 const timeout = 10000;
-export const ws = new ReconnectingWebSocket('ws://kefir:1234', [], {
+
+export const ws = new ReconnectingWebSocket(`ws://${location.hostname}:1234`, [], {
   connectionTimeout: timeout,
 });
 const response_handlers: Record<string, (message: { data: string }) => void> =
