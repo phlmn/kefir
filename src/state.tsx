@@ -21,6 +21,11 @@ function useGlobalStateInner() {
     false,
   );
 
+  const [bypassChannelFilters, setBypassChannelFilters] = useLocalStorage(
+    'bypassChannelFilters',
+    false,
+  );
+
   const [playbackSignalsRms, setPlaybackSignalsRms] = useState<number[]>([]);
   const [playbackSignalsPeak, setPlaybackSignalsPeak] = useState<number[]>([]);
 
@@ -156,6 +161,8 @@ function useGlobalStateInner() {
     const updatedChannelSettings = channelSettings.map(
       (settings: ChannelSettingsType, index: number) => ({
         ...settings,
+        iirFilters: bypassChannelFilters ? [] : settings.iirFilters,
+        firTaps: bypassChannelFilters ? [] : settings.firTaps,
       }),
     );
 
@@ -206,6 +213,8 @@ function useGlobalStateInner() {
     setSystemPresets,
     currentSystemPreset,
     setCurrentSystemPreset,
+    bypassChannelFilters,
+    setBypassChannelFilters,
   };
 }
 

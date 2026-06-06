@@ -17,7 +17,7 @@ import { Switch } from './components/ui/switch';
 import { Label } from './components/ui/label';
 
 export function Root() {
-  const { isConnected, calculate, bypassHouseCurve, setBypassHouseCurve } =
+  const { isConnected, calculate, bypassHouseCurve, setBypassHouseCurve, bypassChannelFilters, setBypassChannelFilters } =
     useGlobalState();
 
   return (
@@ -52,6 +52,13 @@ export function Root() {
                     onCheckedChange={setBypassHouseCurve}
                   />{' '}
                   Bypass House Curve
+                </Label>
+                <Label className="flex items-center py-2 gap-3">
+                  <Switch
+                    checked={bypassChannelFilters}
+                    onCheckedChange={setBypassChannelFilters}
+                  />{' '}
+                  Bypass Channel Filters
                 </Label>
               </PopoverContent>
             </Popover>
